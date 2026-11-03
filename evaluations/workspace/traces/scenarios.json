@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "sanitized": true,
+    "synthetic": true,
+    "format": "completed tool/model execution records plus explicit incomplete starts",
+    "coverage": "complete per scenario except incomplete-correlation and model-incomplete-correlation; model-retries has incomplete usage",
+    "time_unit": "milliseconds",
+    "model_usage": "input_tokens includes cached_input_tokens; output_tokens includes reasoning_tokens. Null usage is unknown, including failures. Pricing is supplied only for the priced-model-retries scenario; no comparative quality evaluations are supplied."
+  },
+  "scenarios": [
+    {
+      "id": "duplicate-read",
+      "conditions": "Read-only operation; same request, identity, authorization, normalized input and state version. No freshness requirement between calls. Both results are consumed. Reusing the first result preserves behavior.",
+      "records": [
+        {"record_id": "dup-1", "kind": "execution", "logical_call_id": "d1", "execution_span_id": "de1", "attempt": 1, "identity": "tenant-a/user-a", "tool": "read", "key": "item-1", "state": "v1", "start_ms": 0, "end_ms": 10, "outcome": "success", "downstream_requests": 1},
+        {"record_id": "dup-2", "kind": "execution", "logical_call_id": "d2", "execution_span_id": "de2", "attempt": 1, "identity": "tenant-a/user-a", "tool": "read", "key": "item-1", "state": "v1", "start_ms": 10, "end_ms": 20, "outcome": "success", "downstream_requests": 1}
+      ]
+    },
+    {
+      "id": "different-identities",
+      "conditions": "Identical lookup key but authorization-dependent results under different tenants. Neither call can replace the other.",
+      "records": [
+        {"record_id": "identity-1", "kind": "execution", "logical_call_id": "i1", "execution_span_id": "ie1", "attempt": 1, "identity": "tenant-a/user-a", "tool": "read", "key": "item-1", "start_ms": 0, "end_ms": 10, "outcome": "success", "downstream_requests": 1},
+        {"record_id": "identity-2", "kind": "execution", "logical_call_id": "i2", "execution_span_id": "ie2", "attempt": 1, "identity": "tenant-b/user-b", "tool": "read", "key": "item-1", "start_ms": 10, "end_ms": 20, "outcome": "success", "downstream_requests": 1}
+      ]
+    },
+    {
+      "id": "required-pagination",
+      "conditions": "The caller needs all items. The provider requires sequential cursor pagination and has no bulk endpoint. Both pages are consumed.",
+      "records": [
+        {"record_id": "page-1", "kind": "execution", "logical_call_id": "p1", "execution_span_id": "pe1", "attempt": 1, "tool": "list", "cursor": null, "next_cursor": "page-two", "start_ms": 0, "end_ms": 10, "outcome": "success", "downstream_requests": 1},
+        {"record_id": "page-2", "kind": "execution", "logical_call_id": "p2", "execution_span_id": "pe2", "attempt": 1, "tool": "list", "cursor": "page-two", "next_cursor": null, "start_ms": 10, "end_ms": 20, "outcome": "success", "downstream_requests": 1}
+      ]
+    },
+    {
+      "id": "nested-retries",
+      "conditions": "One intended read. Orchestration allows two invocations, each with two tool attempts; each tool attempt allows two SDK requests. All fail transiently. This establishes amplification, not how many retries are safely avoidable.",
+      "records": [
+        {"record_id": "retry-1", "kind": "execution", "logical_call_id": "r1", "execution_span_id": "re1", "attempt": 1, "orchestration_invocation": 1, "tool": "read", "start_ms": 0, "end_ms": 20, "outcome": "transient-error", "downstream_requests": 2},
+        {"record_id": "retry-2", "kind": "execution", "logical_call_id": "r1", "execution_span_id": "re2", "attempt": 2, "orchestration_invocation": 1, "tool": "read", "start_ms": 20, "end_ms": 40, "outcome": "transient-error", "downstream_requests": 2},
+        {"record_id": "retry-3", "kind": "execution", "logical_call_id": "r1", "execution_span_id": "re3", "attempt": 3, "orchestration_invocation": 2, "tool": "read", "start_ms": 40, "end_ms": 60, "outcome": "transient-error", "downstream_requests": 2},
+        {"record_id": "retry-4", "kind": "execution", "logical_call_id": "r1", "execution_span_id": "re4", "attempt": 4, "orchestration_invocation": 2, "tool": "read", "start_ms": 60, "end_ms": 80, "outcome": "transient-error", "downstream_requests": 2}
+      ]
+    },
+    {
+      "id": "exported-duplicates",
+      "conditions": "A wrapper contains two legitimate executions. The first execution was exported twice. State changes before the second execution, so it is a required fresh read.",
+      "records": [
+        {"record_id": "wrapper-1", "kind": "wrapper", "start_ms": 0, "end_ms": 20},
+        {"record_id": "export-1", "kind": "execution", "logical_call_id": "e1", "execution_span_id": "ee1", "attempt": 1, "tool": "read", "key": "item-1", "state": "v1", "start_ms": 0, "end_ms": 10, "outcome": "success", "downstream_requests": 1},
+        {"record_id": "export-1", "kind": "execution", "logical_call_id": "e1", "execution_span_id": "ee1", "attempt": 1, "tool": "read", "key": "item-1", "state": "v1", "start_ms": 0, "end_ms": 10, "outcome": "success", "downstream_requests": 1},
+        {"record_id": "export-2", "kind": "execution", "logical_call_id": "e2", "execution_span_id": "ee2", "attempt": 1, "tool": "read", "key": "item-1", "state": "v2", "start_ms": 10, "end_ms": 20, "outcome": "success", "downstream_requests": 1}
+      ]
+    },
+    {
+      "id": "parallel-latency",
+      "conditions": "Two independent required reads run concurrently. No other request work or overhead exists in this synthetic scenario.",
+      "records": [
+        {"record_id": "parallel-1", "kind": "execution", "logical_call_id": "c1", "execution_span_id": "ce1", "attempt": 1, "tool": "read", "key": "item-1", "start_ms": 0, "end_ms": 100, "outcome": "success", "downstream_requests": 1},
+        {"record_id": "parallel-2", "kind": "execution", "logical_call_id": "c2", "execution_span_id": "ce2", "attempt": 1, "tool": "read", "key": "item-2", "start_ms": 0, "end_ms": 100, "outcome": "success", "downstream_requests": 1}
+      ]
+    },
+    {
+      "id": "incomplete-correlation",
+      "conditions": "Partial export only; no completion, logical-call identity, or downstream count is available. The file is not a complete population.",
+      "records": [
+        {"record_id": "incomplete-1", "kind": "start", "execution_span_id": "unknown-execution", "tool": "read", "start_ms": 0}
+      ]
+    },
+    {
+      "id": "duplicate-model",
+      "conditions": "duplicate_model_fixture; same request, authorized identity, prompt/model/settings, conversation, context and policy versions. Read-only inference; no changed state, freshness requirement, independent validation or sampling requirement. Both results are consumed; the contract permits reuse. Provider prompt caching already applies but does not remove either call.",
+      "records": [
+        {"record_id": "model-dup-1", "kind": "model_execution", "logical_model_call_id": "md1", "execution_span_id": "mde1", "attempt": 1, "identity": "tenant-a/user-a", "purpose": "generation", "model": "fixture-generator-v1", "context_id": "context-v1", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 50, "reasoning_tokens": 0},
+        {"record_id": "model-dup-2", "kind": "model_execution", "logical_model_call_id": "md2", "execution_span_id": "mde2", "attempt": 1, "identity": "tenant-a/user-a", "purpose": "generation", "model": "fixture-generator-v1", "context_id": "context-v1", "start_ms": 30, "end_ms": 60, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 50, "reasoning_tokens": 0}
+      ]
+    },
+    {
+      "id": "model-different-identities",
+      "conditions": "Same user text but tenant-specific authorized context. Each model result is required for its own tenant; neither may replace the other.",
+      "records": [
+        {"record_id": "model-identity-1", "kind": "model_execution", "logical_model_call_id": "mi1", "execution_span_id": "mie1", "attempt": 1, "identity": "tenant-a/user-a", "purpose": "generation", "model": "fixture-generator-v1", "context_id": "tenant-a-context", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 0, "reasoning_tokens": 0},
+        {"record_id": "model-identity-2", "kind": "model_execution", "logical_model_call_id": "mi2", "execution_span_id": "mie2", "attempt": 1, "identity": "tenant-b/user-b", "purpose": "generation", "model": "fixture-generator-v1", "context_id": "tenant-b-context", "start_ms": 30, "end_ms": 60, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 0, "reasoning_tokens": 0}
+      ]
+    },
+    {
+      "id": "model-changed-context",
+      "conditions": "Same user text and identity; new tool evidence changes the effective context. Both outputs are required at their respective states; no supported replacement or consolidation is established.",
+      "records": [
+        {"record_id": "model-context-1", "kind": "model_execution", "logical_model_call_id": "mc1", "execution_span_id": "mce1", "attempt": 1, "purpose": "planning", "model": "fixture-generator-v1", "context_id": "before-tool", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 0, "reasoning_tokens": 0},
+        {"record_id": "model-context-2", "kind": "model_execution", "logical_model_call_id": "mc2", "execution_span_id": "mce2", "attempt": 1, "purpose": "synthesis", "model": "fixture-generator-v1", "context_id": "after-tool", "start_ms": 30, "end_ms": 60, "outcome": "success", "input_tokens": 150, "output_tokens": 20, "cached_input_tokens": 0, "reasoning_tokens": 0}
+      ]
+    },
+    {
+      "id": "model-required-sampling",
+      "conditions": "Two independent stochastic samples are required by the task contract. Same inputs do not authorize result reuse; both samples feed the required comparison.",
+      "records": [
+        {"record_id": "model-sample-1", "kind": "model_execution", "logical_model_call_id": "ms1", "execution_span_id": "mse1", "attempt": 1, "purpose": "independent-sample", "model": "fixture-generator-v1", "context_id": "context-v1", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 0, "reasoning_tokens": 0},
+        {"record_id": "model-sample-2", "kind": "model_execution", "logical_model_call_id": "ms2", "execution_span_id": "mse2", "attempt": 1, "purpose": "independent-sample", "model": "fixture-generator-v1", "context_id": "context-v1", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 0, "reasoning_tokens": 0}
+      ]
+    },
+    {
+      "id": "model-retries",
+      "conditions": "One logical inference, first attempt fails transiently, second succeeds. Failed-attempt usage is missing, not zero. Recovery is not demonstrated unnecessary. Complete execution coverage does not imply complete token coverage.",
+      "records": [
+        {"record_id": "model-retry-1", "kind": "model_execution", "logical_model_call_id": "mr1", "execution_span_id": "mre1", "attempt": 1, "purpose": "generation", "model": "fixture-generator-v1", "start_ms": 0, "end_ms": 10, "outcome": "transient-error", "input_tokens": null, "output_tokens": null, "cached_input_tokens": null, "reasoning_tokens": null},
+        {"record_id": "model-retry-2", "kind": "model_execution", "logical_model_call_id": "mr1", "execution_span_id": "mre2", "attempt": 2, "purpose": "generation", "model": "fixture-generator-v1", "start_ms": 10, "end_ms": 40, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 0, "reasoning_tokens": 0}
+      ]
+    },
+    {
+      "id": "priced-model-retries",
+      "conditions": "One logical inference retries after a transient failure. Both attempts include complete usage, including the failed attempt. Pricing for this exact synthetic model version is provided below; the retry's avoidability remains unproven.",
+      "pricing": {
+        "model": "fixture-priced-v1",
+        "version": "v1",
+        "price_date": "2026-01-01",
+        "currency": "USD",
+        "input_per_million_tokens": 2,
+        "cached_input_per_million_tokens": 0.5,
+        "output_per_million_tokens": 8
+      },
+      "records": [
+        {"record_id": "priced-retry-1", "kind": "model_execution", "logical_model_call_id": "mpr1", "execution_span_id": "mpre1", "attempt": 1, "purpose": "generation", "model": "fixture-priced-v1", "model_version": "v1", "start_ms": 0, "end_ms": 10, "outcome": "transient-error", "input_tokens": 500, "output_tokens": 0, "cached_input_tokens": 100, "reasoning_tokens": 0},
+        {"record_id": "priced-retry-2", "kind": "model_execution", "logical_model_call_id": "mpr1", "execution_span_id": "mpre2", "attempt": 2, "purpose": "generation", "model": "fixture-priced-v1", "model_version": "v1", "start_ms": 10, "end_ms": 40, "outcome": "success", "input_tokens": 1000, "output_tokens": 100, "cached_input_tokens": 400, "reasoning_tokens": 20}
+      ]
+    },
+    {
+      "id": "model-exported-duplicates",
+      "conditions": "One required inference. Its wrapper, streaming chunk and duplicate export do not add attempts or usage. Prompt cache usage is a subset of input, reasoning usage is a subset of output.",
+      "records": [
+        {"record_id": "model-wrapper", "kind": "model_wrapper", "start_ms": 0, "end_ms": 30},
+        {"record_id": "model-chunk", "kind": "model_chunk", "execution_span_id": "mee1", "chunk_index": 1},
+        {"record_id": "model-export-1", "kind": "model_execution", "logical_model_call_id": "me1", "execution_span_id": "mee1", "attempt": 1, "purpose": "generation", "model": "fixture-generator-v1", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 40, "reasoning_tokens": 5},
+        {"record_id": "model-export-1", "kind": "model_execution", "logical_model_call_id": "me1", "execution_span_id": "mee1", "attempt": 1, "purpose": "generation", "model": "fixture-generator-v1", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 40, "reasoning_tokens": 5}
+      ]
+    },
+    {
+      "id": "model-unused-routing",
+      "conditions": "deterministic_route_fixture with a valid route; fully specified exact-match routing returns the input route regardless of inference output. The model output is discarded, has no side effects and no required error signal. One model attempt is removable on this bounded successful branch; no production frequency is supplied.",
+      "records": [
+        {"record_id": "model-route-1", "kind": "model_execution", "logical_model_call_id": "mu1", "execution_span_id": "mue1", "attempt": 1, "purpose": "routing", "model": "fixture-generator-v1", "start_ms": 0, "end_ms": 30, "outcome": "success", "input_tokens": 20, "output_tokens": 2, "cached_input_tokens": 0, "reasoning_tokens": 0}
+      ]
+    },
+    {
+      "id": "model-efficiency-hypotheses",
+      "conditions": "A required constrained classification uses a deployment named fixture-large. Its context size and intermediate output may merit investigation, but input relevance, safe output limits, smaller-model capability and quality parity have not been established. No comparative evaluation or prices exist. Token trimming and model substitution must remain unranked hypotheses with unknown savings.",
+      "records": [
+        {"record_id": "model-capacity-1", "kind": "model_execution", "logical_model_call_id": "mh1", "execution_span_id": "mhe1", "attempt": 1, "purpose": "classification", "model": "fixture-large", "start_ms": 0, "end_ms": 50, "outcome": "success", "input_tokens": 1000, "output_tokens": 80, "cached_input_tokens": 400, "reasoning_tokens": 20}
+      ]
+    },
+    {
+      "id": "model-incomplete-correlation",
+      "conditions": "Partial model export with only a start; no logical-call identity, completion or usage. Exact model counts and token totals are unknown; at least one attempt started.",
+      "records": [
+        {"record_id": "model-incomplete-1", "kind": "model_start", "execution_span_id": "model-unknown", "purpose": "generation", "start_ms": 0}
+      ]
+    },
+    {
+      "id": "source-case-a",
+      "source": "src/pipeline.py:source_case_a",
+      "records": [
+        {"record_id": "source-a-1", "kind": "model_execution", "logical_model_call_id": "sa1", "execution_span_id": "sae1", "attempt": 1, "identity": "tenant-a/user-a", "purpose": "classification", "model": "fixture-generator-v1", "context_id": "context-a", "start_ms": 0, "end_ms": 20, "outcome": "success", "input_tokens": 40, "output_tokens": 5, "cached_input_tokens": 0, "reasoning_tokens": 0},
+        {"record_id": "source-a-2", "kind": "model_execution", "logical_model_call_id": "sa2", "execution_span_id": "sae2", "attempt": 1, "identity": "tenant-a/user-a", "purpose": "classification", "model": "fixture-generator-v1", "context_id": "context-a", "start_ms": 20, "end_ms": 40, "outcome": "success", "input_tokens": 40, "output_tokens": 5, "cached_input_tokens": 0, "reasoning_tokens": 0}
+      ]
+    },
+    {
+      "id": "source-case-b",
+      "source": "src/pipeline.py:source_case_b",
+      "records": [
+        {"record_id": "source-b-1", "kind": "model_execution", "logical_model_call_id": "sb1", "execution_span_id": "sbe1", "attempt": 1, "identity": "tenant-a/user-a", "purpose": "generation", "model": "fixture-generator-v1", "context_id": "context-b", "start_ms": 0, "end_ms": 20, "outcome": "success", "input_tokens": 40, "output_tokens": 5, "cached_input_tokens": 0, "reasoning_tokens": 0},
+        {"record_id": "source-b-2", "kind": "model_execution", "logical_model_call_id": "sb2", "execution_span_id": "sbe2", "attempt": 1, "identity": "tenant-a/user-a", "purpose": "generation", "model": "fixture-generator-v1", "context_id": "context-b", "start_ms": 20, "end_ms": 40, "outcome": "success", "input_tokens": 40, "output_tokens": 5, "cached_input_tokens": 0, "reasoning_tokens": 0}
+      ]
+    }
+  ]
+}

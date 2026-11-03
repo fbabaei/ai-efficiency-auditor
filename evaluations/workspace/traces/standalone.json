@@ -1,0 +1,12 @@
+{
+  "metadata": {
+    "sanitized": true,
+    "synthetic": true,
+    "coverage": "complete for one request",
+    "time_unit": "milliseconds"
+  },
+  "records": [
+    {"record_id": "standalone-1", "kind": "execution", "logical_call_id": "s1", "execution_span_id": "se1", "tool": "read", "start_ms": 0, "end_ms": 10, "downstream_requests": 1, "outcome": "success"},
+    {"record_id": "standalone-2", "kind": "execution", "logical_call_id": "s2", "execution_span_id": "se2", "tool": "read", "start_ms": 10, "end_ms": 20, "downstream_requests": 1, "outcome": "success"}
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "methodology_version": "0.4.0",
+  "required_source_lines": {"source-case-a": [37, 44], "source-case-b": [49, 50]},
+  "required_limitations": {
+    "nested-retries": ["uncertain-retry"],
+    "incomplete-correlation": ["missing-correlation"],
+    "unmarked-artifact": ["unsanitized-artifact"],
+    "duplicate-model": ["missing-pricing"],
+    "model-different-identities": ["missing-pricing"],
+    "model-changed-context": ["missing-pricing"],
+    "model-required-sampling": ["missing-pricing"],
+    "model-retries": ["missing-pricing", "incomplete-usage", "uncertain-retry"],
+    "priced-model-retries": ["uncertain-retry"],
+    "model-exported-duplicates": ["missing-pricing"],
+    "model-unused-routing": ["missing-pricing"],
+    "model-efficiency-hypotheses": ["missing-pricing", "unverified-optimization"],
+    "model-incomplete-correlation": ["missing-pricing", "missing-correlation", "incomplete-usage"],
+    "source-case-a": ["missing-pricing"],
+    "source-case-b": ["missing-pricing", "unverified-optimization"]
+  },
+  "cases": [
+    {"id": "duplicate-read", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 1, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": ["duplicate-read"], "required_evidence": ["dup-1", "dup-2"], "limitation_required": false},
+    {"id": "different-identities", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": [], "required_evidence": ["identity-1", "identity-2"], "limitation_required": false},
+    {"id": "required-pagination", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": [], "required_evidence": ["page-1", "page-2"], "limitation_required": false},
+    {"id": "nested-retries", "metrics": {"logical_calls": 1, "execution_attempts": 4, "downstream_requests": 8, "confirmed_avoidable_calls": null, "elapsed_ms": 80, "summed_tool_ms": 80}, "finding_categories": [], "required_evidence": ["retry-1", "retry-2", "retry-3", "retry-4"], "limitation_required": true},
+    {"id": "exported-duplicates", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": [], "required_evidence": ["export-1", "export-2"], "limitation_required": false},
+    {"id": "parallel-latency", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 100, "summed_tool_ms": 200}, "finding_categories": [], "required_evidence": ["parallel-1", "parallel-2"], "limitation_required": false},
+    {"id": "incomplete-correlation", "metrics": {"logical_calls": null, "execution_attempts": null, "downstream_requests": null, "confirmed_avoidable_calls": null, "elapsed_ms": null, "summed_tool_ms": null, "attempts_lower_bound": 1}, "finding_categories": [], "required_evidence": ["incomplete-1"], "limitation_required": true},
+    {"id": "unmarked-artifact", "metrics": {"logical_calls": null, "execution_attempts": null, "downstream_requests": null, "confirmed_avoidable_calls": null, "elapsed_ms": null, "summed_tool_ms": null}, "finding_categories": [], "required_evidence": [], "limitation_required": true},
+    {"id": "duplicate-model", "metrics": {"model_logical_calls": 2, "model_attempts": 2, "input_tokens": 200, "output_tokens": 40, "cached_input_tokens": 100, "reasoning_tokens": 0, "confirmed_avoidable_model_calls": 1, "elapsed_ms": 60, "summed_model_ms": 60, "model_cost": null}, "finding_categories": ["duplicate-model"], "required_evidence": ["model-dup-1", "model-dup-2"], "limitation_required": true},
+    {"id": "model-different-identities", "metrics": {"model_logical_calls": 2, "model_attempts": 2, "input_tokens": 200, "output_tokens": 40, "cached_input_tokens": 0, "reasoning_tokens": 0, "confirmed_avoidable_model_calls": 0, "elapsed_ms": 60, "summed_model_ms": 60, "model_cost": null}, "finding_categories": [], "required_evidence": ["model-identity-1", "model-identity-2"], "limitation_required": true},
+    {"id": "model-changed-context", "metrics": {"model_logical_calls": 2, "model_attempts": 2, "input_tokens": 250, "output_tokens": 40, "cached_input_tokens": 0, "reasoning_tokens": 0, "confirmed_avoidable_model_calls": 0, "elapsed_ms": 60, "summed_model_ms": 60, "model_cost": null}, "finding_categories": [], "required_evidence": ["model-context-1", "model-context-2"], "limitation_required": true},
+    {"id": "model-required-sampling", "metrics": {"model_logical_calls": 2, "model_attempts": 2, "input_tokens": 200, "output_tokens": 40, "cached_input_tokens": 0, "reasoning_tokens": 0, "confirmed_avoidable_model_calls": 0, "elapsed_ms": 30, "summed_model_ms": 60, "model_cost": null}, "finding_categories": [], "required_evidence": ["model-sample-1", "model-sample-2"], "limitation_required": true},
+    {"id": "model-retries", "metrics": {"model_logical_calls": 1, "model_attempts": 2, "input_tokens": null, "output_tokens": null, "cached_input_tokens": null, "reasoning_tokens": null, "confirmed_avoidable_model_calls": null, "elapsed_ms": 40, "summed_model_ms": 40, "model_cost": null}, "finding_categories": [], "required_evidence": ["model-retry-1", "model-retry-2"], "limitation_required": true},
+    {"id": "priced-model-retries", "metrics": {"model_logical_calls": 1, "model_attempts": 2, "input_tokens": 1500, "output_tokens": 100, "cached_input_tokens": 500, "reasoning_tokens": 20, "confirmed_avoidable_model_calls": null, "elapsed_ms": 40, "summed_model_ms": 40, "model_cost": 0.00305}, "cost_currency": "USD", "finding_categories": [], "required_evidence": ["priced-retry-1", "priced-retry-2"], "limitation_required": true},
+    {"id": "model-exported-duplicates", "metrics": {"model_logical_calls": 1, "model_attempts": 1, "input_tokens": 100, "output_tokens": 20, "cached_input_tokens": 40, "reasoning_tokens": 5, "confirmed_avoidable_model_calls": 0, "elapsed_ms": 30, "summed_model_ms": 30, "model_cost": null}, "finding_categories": [], "required_evidence": ["model-export-1"], "limitation_required": true},
+    {"id": "model-unused-routing", "metrics": {"model_logical_calls": 1, "model_attempts": 1, "input_tokens": 20, "output_tokens": 2, "cached_input_tokens": 0, "reasoning_tokens": 0, "confirmed_avoidable_model_calls": 1, "elapsed_ms": 30, "summed_model_ms": 30, "model_cost": null}, "finding_categories": ["unused-model-result"], "required_evidence": ["model-route-1"], "limitation_required": true},
+    {"id": "model-efficiency-hypotheses", "metrics": {"model_logical_calls": 1, "model_attempts": 1, "input_tokens": 1000, "output_tokens": 80, "cached_input_tokens": 400, "reasoning_tokens": 20, "confirmed_avoidable_model_calls": null, "elapsed_ms": 50, "summed_model_ms": 50, "model_cost": null}, "finding_categories": [], "required_evidence": ["model-capacity-1"], "limitation_required": true},
+    {"id": "model-incomplete-correlation", "metrics": {"model_logical_calls": null, "model_attempts": null, "input_tokens": null, "output_tokens": null, "cached_input_tokens": null, "reasoning_tokens": null, "confirmed_avoidable_model_calls": null, "elapsed_ms": null, "summed_model_ms": null, "model_cost": null, "model_attempts_lower_bound": 1}, "finding_categories": [], "required_evidence": ["model-incomplete-1"], "limitation_required": true},
+    {"id": "source-case-a", "metrics": {"model_logical_calls": 2, "model_attempts": 2, "input_tokens": 80, "output_tokens": 10, "cached_input_tokens": 0, "reasoning_tokens": 0, "confirmed_avoidable_model_calls": 1, "elapsed_ms": 40, "summed_model_ms": 40, "model_cost": null}, "finding_categories": ["unused-model-result"], "required_evidence": ["source-a-1", "source-a-2"], "limitation_required": true},
+    {"id": "source-case-b", "metrics": {"model_logical_calls": 2, "model_attempts": 2, "input_tokens": 80, "output_tokens": 10, "cached_input_tokens": 0, "reasoning_tokens": 0, "confirmed_avoidable_model_calls": null, "elapsed_ms": 40, "summed_model_ms": 40, "model_cost": null}, "finding_categories": [], "required_evidence": ["source-b-1", "source-b-2"], "limitation_required": true}
+  ]
+}

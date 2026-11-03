@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "synthetic": true,
+    "scenario": "unmarked-artifact",
+    "description": "Negative eligibility fixture: no explicit sanitized marker."
+  },
+  "records": [
+    {"record_id": "unmarked-1", "kind": "execution", "logical_call_id": "u1", "execution_span_id": "ue1", "tool": "read", "start_ms": 0, "end_ms": 10, "downstream_requests": 1}
+  ]
+}
