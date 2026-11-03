@@ -1,0 +1,13 @@
+{
+  "methodology_version": "0.2.0",
+  "cases": [
+    {"id": "duplicate-read", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 1, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": ["duplicate-read"], "required_evidence": ["dup-1", "dup-2"], "limitation_required": false},
+    {"id": "different-identities", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": [], "required_evidence": ["identity-1", "identity-2"], "limitation_required": false},
+    {"id": "required-pagination", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": [], "required_evidence": ["page-1", "page-2"], "limitation_required": false},
+    {"id": "nested-retries", "metrics": {"logical_calls": 1, "execution_attempts": 4, "downstream_requests": 8, "confirmed_avoidable_calls": null, "elapsed_ms": 80, "summed_tool_ms": 80}, "finding_categories": [], "required_evidence": ["retry-1", "retry-2", "retry-3", "retry-4"], "limitation_required": true},
+    {"id": "exported-duplicates", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 20, "summed_tool_ms": 20}, "finding_categories": [], "required_evidence": ["export-1", "export-2"], "limitation_required": false},
+    {"id": "parallel-latency", "metrics": {"logical_calls": 2, "execution_attempts": 2, "downstream_requests": 2, "confirmed_avoidable_calls": 0, "elapsed_ms": 100, "summed_tool_ms": 200}, "finding_categories": [], "required_evidence": ["parallel-1", "parallel-2"], "limitation_required": false},
+    {"id": "incomplete-correlation", "metrics": {"logical_calls": null, "execution_attempts": null, "downstream_requests": null, "confirmed_avoidable_calls": null, "elapsed_ms": null, "summed_tool_ms": null, "attempts_lower_bound": 1}, "finding_categories": [], "required_evidence": ["incomplete-1"], "limitation_required": true},
+    {"id": "unmarked-artifact", "metrics": {"logical_calls": null, "execution_attempts": null, "downstream_requests": null, "confirmed_avoidable_calls": null, "elapsed_ms": null, "summed_tool_ms": null}, "finding_categories": [], "required_evidence": [], "limitation_required": true}
+  ]
+}

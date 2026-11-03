@@ -1,0 +1,5 @@
+[project]
+name = "synthetic-tool-audit-fixture"
+version = "0.0.0"
+description = "Synthetic evidence only; not a deployable application"
+requires-python = ">=3.10"

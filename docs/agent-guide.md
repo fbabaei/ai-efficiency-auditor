@@ -1,6 +1,6 @@
 # Tool-Call Optimization Auditor
 
-The [Tool-Call Optimization Auditor](./tool-call-optimization-auditor.agent.md)
+The [Tool-Call Optimization Auditor](../.github/agents/tool-call-optimization-auditor.agent.md)
 is a read-only reviewer for AI applications. It examines source code and existing
 sanitized traces to answer:
 
@@ -22,6 +22,22 @@ Exploration is bounded to avoid an expensive, open-ended audit. If it cannot
 locate the application, it reports **not auditable** rather than inventing counts.
 Trace files are eligible for counting only when their headers or metadata
 explicitly state that they are sanitized.
+That eligibility rule applies to runtime artifacts, not application source,
+manifests, tests, or ordinary documentation. Labels do not authorize exposing
+sensitive values.
+Runtime eligibility is established before payload reads, using small header-only
+ranges. If metadata cannot be safely separated from event payloads, the artifact
+is skipped until a separate declaration is supplied.
+
+An ambiguous multi-application workspace requires scope selection, not a guess
+based on manifest entry-point counts. When interaction is unavailable, the agent
+reports that scope selection is required and does not combine applications.
+
+Each scenario has a limit of 25 files and 7,500 returned content lines, including
+search results and repeated reads. The normal per-file limit is 300 lines; a
+specific finding can justify up to 600 lines within the same total. Shared
+guidance has a separate once-per-audit limit of 10 files and 1,500 lines.
+Exhausting a budget means partial coverage, not a clean bill of health.
 
 ### 2. Map the execution path
 
@@ -88,6 +104,11 @@ Hypotheses remain in the validation plan with the evidence needed to test them.
 
 The agent ranks demonstrated findings by confidence, then estimated avoidable
 calls per request, lower risk, and lower implementation effort.
+High confidence requires complete evidence of avoidability and the relevant
+identity, state, freshness, and dependency conditions. Medium confidence applies
+to demonstrated bounded scenarios with unknown frequency. Low-confidence
+hypotheses are unranked. Evidence level and confidence are separate labels;
+unknown impact is never converted to zero.
 
 Recommendations may include:
 
@@ -145,10 +166,14 @@ The report contains:
 6. **Validation plan and missing evidence:** comparison criteria,
    instrumentation gaps, and the next highest-value action.
 
-Every ranked finding and call-map row requires a clickable file-and-line
-reference. Findings from sanitized traces use the trace path and record ID
-instead. If a line cannot be verified, the report gives the file path and marks
-the line as unknown.
+Every ranked finding and call-map row requires a citation. Local reports use
+the editor's absolute file-and-line links; remote reports use commit-pinned
+repository links when URL and revision are verified. Otherwise, remote reports
+use a textual path and verified line and disclose that pinned links are
+unavailable. Findings from sanitized traces use the trace path and record ID.
+If a line cannot be verified, the report gives the path and marks the line
+unknown. Methodology version and any known audited revision, host, and model
+are recorded; unavailable provenance stays unknown.
 
 If no redundant calls are demonstrated, the report says so and identifies what
 evidence could resolve uncertainty.
@@ -167,3 +192,10 @@ If traces are available, provide their workspace paths and ensure their headers
 or metadata state that they are sanitized.
 
 The goal is fewer unnecessary calls, not fewer checks or less reliable behavior.
+
+## Sharing and invocation
+
+Keep this guide outside agent-discovery directories: hosts can also recognize
+plain Markdown files there as agents. See the [installation guide](../README.md),
+[remote invocation guide](remote-invocation.md), and
+[evaluation instructions](../evaluations/README.md).
