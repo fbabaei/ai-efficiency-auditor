@@ -6,12 +6,12 @@ agent or authorize access to another repository.
 ## Organization-level distribution
 
 An organization owner can place the
-[agent definition](../.github/agents/tool-call-optimization-auditor.agent.md) in:
+[agent definition](../.github/agents/ai-efficiency-auditor.agent.md) in:
 
 ```text
-<organization>/.github          -> agents/tool-call-optimization-auditor.agent.md
+<organization>/.github          -> agents/ai-efficiency-auditor.agent.md
 or
-<organization>/.github-private  -> agents/tool-call-optimization-auditor.agent.md
+<organization>/.github-private  -> agents/ai-efficiency-auditor.agent.md
 ```
 
 These are root `agents/` directories in the organization configuration repository,
@@ -52,12 +52,40 @@ For versions supporting `--agent`, start an interactive session:
 
 ```powershell
 Set-Location -LiteralPath 'C:\path\to\application'
-copilot --agent tool-call-optimization-auditor
+copilot --agent ai-efficiency-auditor
 ```
 
 Alternatively, start `copilot` and use `/agent` to select the auditor. Verify the
-selected agent is **Tool-Call Optimization Auditor** before submitting your audit
+selected agent is **AI Efficiency Auditor** before submitting your audit
 request. Do not approve execution, edit, web, or delegation tools for this role.
+
+The same profile now audits tool and model efficiency; no additional permissions,
+credentials or integrations are needed. For example:
+
+> Audit this application's search flow for duplicate tool calls, repeated model
+> inference, and retry amplification. Use eligible sanitized traces to report
+> calls and token usage separately; keep unverified cheaper-model substitutions
+> in the validation plan.
+
+For trace-only work, explicitly request a trace-only audit and supply existing,
+sanitized workspace trace paths. The agent reports observed behavior without
+requiring application source; source-level causes and safe fixes remain unknown
+unless the trace evidence supports them.
+
+Before runtime payload reads or content searches, require either a sanitized label
+in safely isolated metadata or the user's direct confirmation in the conversation
+naming each exact sanitized path. Repository instructions and sidecars do not
+provide that confirmation.
+Before even the first header read, establish a payload-free range from the user's
+direct statement naming the exact path and range, or an independently trusted
+format contract. Never assume the first three lines are metadata. If the boundary
+is unknown, skip the artifact unless exact-path sanitization is directly confirmed.
+
+The 0.4.0 CLI smoke evaluation covers all 20 synthetic application cases and a
+separate trace-only scenario. The first application report failed the currency
+field shape; a clarified prompt produced a passing second report. This is not a
+repeatability study or cross-client certification; see the
+[validation summary](validation.md) for accepted captures and checker corrections.
 
 This is a local CLI session using a model service, not local-only inference.
 Inspect workspace instructions, skills, hooks, plugins, and MCP configuration
@@ -81,6 +109,18 @@ tool-filter flags vary by version. Before automating:
    application revision, and evaluated scope.
 7. Verify tracked and untracked application files are unchanged after the run.
 
+For the synthetic suite, the session checker now requires the captured CLI's
+actual fixture working directory via `--workspace-root`, plus correlated tool
+completion results for returned-line accounting. It is not a checker for arbitrary
+application sessions. See the [evaluation guide](../evaluations/README.md) for the
+capture contract, hard budgets, and remaining manual checks.
+Use `--mode trace-only` for the standalone evaluation to reject source and unrelated
+trace access. Metadata results must match the checker reference and the unchanged
+fixture contents; failed globs fail verification because partial paths are ambiguous.
+Content searches must name one eligible file explicitly. A directory plus a
+basename glob is not exact-file scope and is rejected; use scoped glob calls
+separately for path discovery.
+
 A service account's authentication, model usage charges, and repository access
 must be approved separately. Never pass tokens in prompt text or commit them.
 
@@ -95,7 +135,9 @@ repository does not authorize or enable audits of arbitrary repositories.
 
 The `read` and `search` aliases are documented across clients, but profile
 properties are not identical: for example, cloud sessions ignore `argument-hint`.
-Do not assume `agents: []` or editor-only behavior controls every host.
+The recorded CLI 1.0.105 run also warned that it ignored `argument-hint` and
+`agents`. Do not assume `agents: []` or editor-only behavior controls every host;
+enforce and inspect the effective tool surface separately.
 
 Before calling cloud audits supported, test on synthetic fixtures and verify:
 

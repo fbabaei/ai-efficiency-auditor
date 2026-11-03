@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import re
 import unittest
@@ -12,16 +13,19 @@ class PackagingTests(unittest.TestCase):
         directory = ROOT / ".github" / "agents"
         self.assertEqual(
             sorted(path.name for path in directory.iterdir()),
-            ["tool-call-optimization-auditor.agent.md"],
+            ["ai-efficiency-auditor.agent.md"],
         )
-        agent = (directory / "tool-call-optimization-auditor.agent.md").read_text(encoding="utf-8")
+        agent = (directory / "ai-efficiency-auditor.agent.md").read_text(encoding="utf-8")
         self.assertTrue(agent.startswith("---\n"))
         header, body = agent[4:].split("\n---\n", 1)
+        self.assertIn("name: AI Efficiency Auditor", header.splitlines())
         self.assertIn("tools: [read, search]", header.splitlines())
         self.assertIn("agents: []", header.splitlines())
         self.assertIn("user-invocable: true", header.splitlines())
         self.assertRegex(header, r"(?m)^description: \".+\"$")
-        self.assertIn("Audit methodology version: 0.2.0.", body)
+        expected = (ROOT / "evaluations" / "expected.json").read_text(encoding="utf-8")
+        version = json.loads(expected)["methodology_version"]
+        self.assertIn(f"Audit methodology version: {version}.", body)
 
     def test_documentation_links_resolve(self) -> None:
         paths = [ROOT / "README.md", ROOT / "CHANGELOG.md"]

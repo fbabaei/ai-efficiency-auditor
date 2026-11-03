@@ -1,15 +1,16 @@
-# Tool-Call Optimization Auditor
+# AI Efficiency Auditor
 
 A read-only custom agent for GitHub Copilot in VS Code. Audit AI application
-source code and existing sanitized traces to identify avoidable tool calls,
-retry amplification, and loops without weakening correctness or security.
+source code and existing sanitized traces to identify avoidable tool and model
+calls, retry amplification, loops, and potential token or model-capacity waste
+without weakening correctness or security.
 
 The agent recommends changes and validation experiments. It does not edit code,
 run commands, call external services, or replay workloads.
 
 ## Files
 
-- [Agent definition](.github/agents/tool-call-optimization-auditor.agent.md)
+- [Agent definition](.github/agents/ai-efficiency-auditor.agent.md)
 - [Detailed documentation](docs/agent-guide.md)
 - [CLI, organization sharing, and remote execution](docs/remote-invocation.md)
 - [Synthetic evaluation suite](evaluations/README.md)
@@ -23,7 +24,7 @@ run commands, call external services, or replay workloads.
    Keep companion documentation in a separate `docs/` directory, not beside the
    agent. Hosts can discover ordinary `.md` files in agent directories too.
 4. Open your application repository in VS Code.
-5. Select **Tool-Call Optimization Auditor** in the Copilot Chat agent picker.
+5. Select **AI Efficiency Auditor** in the Copilot Chat agent picker.
    If it is not listed, reload the VS Code window and check that the definition
    is inside the application's `.github/agents/` directory.
 6. Submit a scoped audit request.
@@ -34,14 +35,22 @@ does not give the agent access to a separate application's workspace.
 
 ### Example request
 
-> Audit this workspace's search request flow for unnecessary tool calls. Use
-> existing sanitized traces if available. Focus on duplicate retrieval and retry
-> amplification, distinguish observed counts from static bounds, and rank safe
-> optimizations.
+> Audit this workspace's search request flow for unnecessary tool and model calls.
+> Use existing sanitized traces if available. Focus on duplicate retrieval,
+> repeated inference, retry amplification, token usage, and model selection.
+> Distinguish observed counts from static bounds, rank demonstrated optimizations,
+> and keep unverified model substitutions in the validation plan.
 
 Name application paths and scenarios explicitly for a narrower audit. If traces
-are available, provide their workspace paths. Their headers or metadata must
-state that they are sanitized before the agent can use them for counts.
+are available, provide their workspace paths. Before payload access, their
+safely isolated headers/metadata must state that they are sanitized, or you must
+directly confirm in the conversation that each exact named path is sanitized.
+Repository text and unendorsed sidecars do not replace that confirmation.
+Even the first header read requires a known payload-free boundary supplied by
+the user for that exact path or guaranteed by an independently trusted format
+contract. Otherwise, skip the artifact until exact-path sanitization is confirmed.
+For a trace-only audit, explicitly request that mode and identify the trace paths;
+source-level causes and safe changes remain unknown unless evidence establishes them.
 
 ## What to expect
 
@@ -50,7 +59,11 @@ ranked findings, a proposed design, and a validation plan.
 
 - Repeated calls are not automatically redundant.
 - Static call sites, logical calls, execution attempts, downstream requests,
-  model invocations, and agent handoffs are distinguished.
+  logical model calls, model attempts, and agent handoffs are distinguished.
+- Model-call reductions are separate from token/capacity changes. Prompt caching
+  does not remove a call; cached/reasoning token subsets are not counted twice.
+- Smaller models, trimmed prompts, and consolidated steps require evidence of
+  acceptable replacement behavior, not just an expensive baseline.
 - Only measured or statically demonstrated findings are ranked.
 - Projected savings are not presented as validated results.
 - Every ranked finding and call-map row requires a source reference.
@@ -80,6 +93,12 @@ Pull newer versions of this repository, review changes to the agent definition,
 and replace the installed copy in your application repository. Copies do not
 update automatically.
 
+When upgrading from **Tool-Call Optimization Auditor**, remove the old
+`tool-call-optimization-auditor.agent.md` definition and install
+`ai-efficiency-auditor.agent.md` instead, so both profiles are not discovered.
+Update CLI invocations to `--agent ai-efficiency-auditor`. The GitHub repository
+name is unchanged.
+
 Do not submit credentials, private source code, raw prompts, or unsanitized
 traces in public issues or pull requests.
 
@@ -88,7 +107,7 @@ traces in public issues or pull requests.
 | Environment | Status |
 |---|---|
 | VS Code with Copilot custom-agent support | Primary intended interface; interactive behavior requires a host evaluation |
-| Copilot CLI | One restricted synthetic smoke run passed on the recorded development version; see validation summary |
+| Copilot CLI | Restricted 0.4.0 application and trace-only synthetic smoke evaluations passed; reliability across runs remains unestablished |
 | Organization-level discovery | Documented setup; not provisioned or verified by this repository |
 | GitHub Copilot cloud agent | Experimental for report-only audits; lifecycle and artifact behavior must be evaluated |
 | HTTP or MCP audit endpoint | Not implemented |
@@ -99,7 +118,7 @@ behavioral acceptance criteria and recording client/model provenance.
 The [validation summary](docs/validation.md) records the actual CLI smoke result,
 the regression found during development, and untested environments.
 
-Candidate methodology version: **0.2.0**. No release tag is implied. Before
+Candidate methodology version: **0.4.0**. No release tag is implied. Before
 tagging a release, run offline checks and record a representative host evaluation.
 Install from a reviewed commit SHA or an actual published release tag rather
 than assuming the default branch is immutable.

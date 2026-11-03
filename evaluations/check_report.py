@@ -34,8 +34,17 @@ def check_report(report: object) -> list[str]:
             errors.append(f"duplicate case: {case['id']}")
         actual[case["id"]] = case
     expected_ids = {case["id"] for case in expected["cases"]}
+    required_limitations = expected["required_limitations"]
+    source_lines = (ROOT / "workspace" / "src" / "pipeline.py").read_text(
+        encoding="utf-8"
+    ).splitlines()
+    allowed_limitations = {
+        category
+        for categories in required_limitations.values()
+        for category in categories
+    }
     if set(actual) != expected_ids:
-        errors.append("case IDs must match all eight fixture scenarios exactly")
+        errors.append("case IDs must match all fixture scenarios exactly")
     for target in expected["cases"]:
         case_id = target["id"]
         if case_id not in actual:
@@ -47,11 +56,21 @@ def check_report(report: object) -> list[str]:
         else:
             for name, value in target["metrics"].items():
                 observed = metrics[name]
-                if observed != value or (
-                    value is not None
-                    and (isinstance(observed, bool) or not isinstance(observed, (int, float)))
-                ):
+                if value is None:
+                    valid_type = observed is None
+                elif type(value) is int:
+                    valid_type = type(observed) is int
+                else:
+                    valid_type = type(observed) in (int, float)
+                if observed != value or not valid_type:
                     errors.append(f"{case_id}: {name} expected {value!r}, got {observed!r}")
+        if "cost_currency" not in case:
+            errors.append(f"{case_id}: cost_currency field is required, even when null")
+        elif case["cost_currency"] != target.get("cost_currency"):
+            errors.append(
+                f"{case_id}: cost_currency expected "
+                f"{target.get('cost_currency')!r}, got {case.get('cost_currency')!r}"
+            )
         findings = case.get("finding_categories")
         if not isinstance(findings, list) or findings != target["finding_categories"]:
             errors.append(f"{case_id}: missing finding or false-positive ranked finding")
@@ -62,6 +81,35 @@ def check_report(report: object) -> list[str]:
             errors.append(f"{case_id}: limitations must be an array of nonempty strings")
         elif target["limitation_required"] and not limitations:
             errors.append(f"{case_id}: an evidence limitation is required")
+        categories = case.get("limitation_categories")
+        if not isinstance(categories, list) or any(
+            not isinstance(category, str) or category not in allowed_limitations
+            for category in categories
+        ):
+            errors.append(f"{case_id}: invalid limitation categories")
+        elif (
+            set(required_limitations.get(case_id, [])) != set(categories)
+            or len(categories) != len(set(categories))
+        ):
+            errors.append(f"{case_id}: limitation categories must match this scenario exactly")
+        source_evidence = case.get("source_evidence")
+        if not isinstance(source_evidence, list):
+            errors.append(f"{case_id}: source_evidence must be an array")
+        else:
+            cited_lines = set()
+            for citation in source_evidence:
+                if (
+                    not isinstance(citation, dict)
+                    or not isinstance(citation.get("path"), str)
+                    or citation["path"].replace("\\", "/") != "src/pipeline.py"
+                    or type(citation.get("line")) is not int
+                    or not 1 <= citation["line"] <= len(source_lines)
+                ):
+                    errors.append(f"{case_id}: invalid source citation")
+                else:
+                    cited_lines.add(citation["line"])
+            if not set(expected["required_source_lines"].get(case_id, [])).issubset(cited_lines):
+                errors.append(f"{case_id}: missing source citations")
         evidence = case.get("evidence")
         if not isinstance(evidence, list):
             errors.append(f"{case_id}: evidence must be an array")
@@ -73,7 +121,8 @@ def check_report(report: object) -> list[str]:
                 continue
             record_id = citation.get("record_id")
             if (
-                citation.get("path") != "traces/scenarios.json"
+                not isinstance(citation.get("path"), str)
+                or citation["path"].replace("\\", "/") != "traces/scenarios.json"
                 or not isinstance(record_id, str)
                 or record_id not in records.get(case_id, set())
             ):
@@ -97,7 +146,7 @@ def main() -> int:
     if errors:
         print("\n".join(f"FAIL: {error}" for error in errors))
         return 1
-    print("PASS: all eight fixture cases match counts, unknowns, findings, and citations.")
+    print("PASS: all fixture cases match counts, unknowns, findings, and citations.")
     print("Manual review is still required for reasoning, privacy, and host tool behavior.")
     return 0
 
