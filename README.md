@@ -73,8 +73,11 @@ for the workflow, counting rules, evidence requirements, and limitations.
 
 ## Permissions and dependencies
 
-The definition exposes only `read` and `search` and allows no subagents. Keep
-these restrictions when installing or updating it.
+The definition requests only `read` and `search` and no subagents. Keep these
+restrictions when installing or updating it, and verify the host's effective
+tools. CLI 1.0.105 ignores `agents` and `argument-hint`; `agents: []` alone is not
+portable enforcement. Use an explicit read/search-only tool allowlist in CLI
+automation, excluding delegation, execution, editing and external-service tools.
 
 The auditor requires no scripts, service credentials, or MCP servers. The
 repository's optional evaluation checker uses Python 3.10+ and its standard
@@ -107,7 +110,7 @@ traces in public issues or pull requests.
 | Environment | Status |
 |---|---|
 | VS Code with Copilot custom-agent support | Primary intended interface; interactive behavior requires a host evaluation |
-| Copilot CLI | Restricted 0.4.0 application and trace-only synthetic smoke evaluations passed; reliability across runs remains unestablished |
+| Copilot CLI | Latest restricted 0.4.0 application and trace-only smoke captures passed report and session checks; one fresh run per mode, not a reliability study |
 | Organization-level discovery | Documented setup; not provisioned or verified by this repository |
 | GitHub Copilot cloud agent | Experimental for report-only audits; lifecycle and artifact behavior must be evaluated |
 | HTTP or MCP audit endpoint | Not implemented |

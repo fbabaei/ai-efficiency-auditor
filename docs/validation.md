@@ -2,15 +2,62 @@
 
 ## Current candidate: 0.4.0
 
-The smoke captures below predate the latest architecture-review fixes: an
-independently established boundary before the first metadata read, reference-bound
-metadata validation, explicit trace-only session scope, failed-glob rejection,
-mandatory currency-field presence, and exact-file search scope. They do not
-validate the updated agent instructions or revised evaluation prompts; no new
-host run is claimed.
-The updated offline suite passes 59 tests, including adversarial metadata results,
-changed fixtures, trace-only scope, failed globs, omitted currency fields, and
-directory searches that return nested basename matches.
+### Latest discovery-scope fix and live evaluation
+
+On 2026-11-03, the updated agent was run once in application mode and once in
+trace-only mode with GitHub Copilot CLI 1.0.105 on Windows. The host recorded
+`gpt-6.1-sol`; the runner did not select a model. The uncommitted candidate was
+based on `15628028914d01e13679121941aa8eb584c5dac8`, with the copied agent's
+SHA-256 recorded separately. Both runs exited 0.
+
+Each mode used a fresh fixture workspace and separate disposable Copilot
+configuration, an explicit read/search-only tool allowlist, disabled hooks,
+IDE auto-connect and built-in MCPs, and disabled sync, updates and telemetry.
+No application code was executed. Metadata boundaries were independently
+verified against unchanged reference fixtures before invocation.
+
+| Check | Result | Scope |
+|---|---|---|
+| Offline unit tests | PASS, 66 tests on Python 3.15.0a5 | Existing protections plus manifest/listing support, scoped glob equivalents, finite literal alternatives and rejected-start completion accounting |
+| Application behavioral report | PASS | All 20 independent cases, including USD 0.00305 priced retries; original captured companion, no report corrections |
+| Trace-only behavioral report | PASS | Two logical calls, attempts and downstream requests; avoidability unknown, no ranked finding; original captured companion |
+| Session checks | PASS after checker-only compatibility correction | Application: 9 `view`, 7 `glob`, 1 `rg`; trace-only: 4 `view`, 3 `glob`; actual roots, sequential verified metadata gates and hard budgets |
+| Fixture preservation | PASS | Identical before/after inventories and SHA-256 hashes: 7 application files and 2 trace-only files, including installed profiles |
+
+Manual review confirmed bounded discovery, named-trace isolation, no installed
+profile inspection, and no unmarked payload access. Reports preserved identity,
+pagination, independent sampling and recovery requirements, source-case
+distinctions, token-subset accounting and uncertainty. No execution, editing,
+delegation or external-service tool calls were exposed or observed.
+
+The application capture initially failed three pattern checks: exact
+`src/pipeline.py` discovery, `traces/{scenarios,unmarked}.json`, and a finite list
+of conventional root-manifest filenames. These enumerate bounded named
+candidates, not broad repository or sibling-trace contents. The checker gained
+regressions for these forms and rejects unknown/malformed alternatives and
+unexpected returned evidence. The same unchanged capture then passed; no
+additional agent run followed that checker-only correction. Broad
+`.github/**/*`, `traces/*.json` and repository-wide discovery remain rejected.
+
+An earlier run using the architecture-review candidate passed both report
+checkers but failed application session checks: it enumerated the installed
+profile and an unrelated trace filename, without reading either as payload.
+That failure also exposed false rejections of root listings/manifests and
+secondary unmatched-completion errors. Its original evidence is preserved;
+it is not counted as a passing session evaluation. The agent's discovery
+instructions and checker were changed before the latest two captures.
+
+CLI 1.0.105 ignores `argument-hint` and `agents`. The effective tool allowlist,
+not `agents: []`, prevented delegation. This is one fresh smoke run per mode,
+not evidence of repeatability, unrestricted-host safety, OS sandboxing or
+VS Code/cloud certification. Per-scenario budget attribution and normal
+300-line exceptions still require manual review.
+
+### Earlier development smoke captures
+
+The captures below predate the architecture-review and discovery-scope fixes.
+They validate only their historical candidate and prompts, not the current
+definition. The latest candidate's independent results are recorded above.
 
 On 2026-11-03, the uncommitted 0.4.0 candidate was evaluated with GitHub Copilot
 CLI 1.0.105 on Windows. The model was `gpt-6.1-sol`, recorded in host tool events,

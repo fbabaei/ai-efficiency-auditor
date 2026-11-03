@@ -19,6 +19,10 @@ The agent reads repository instructions and the README, identifies the applicati
 and relevant framework guidance, then finds entry points, orchestration, tool
 dispatch, model clients and selection, prompt/context construction, output
 consumption, retries, caches, tests, and sanitized traces.
+Discovery starts with exact named guidance files and manifests, followed by
+narrow source/skill-directory globs. Named trace paths are reused without
+enumerating sibling traces; the installed auditor profile is not application
+evidence. Trace-only audits skip directory listings and manifest discovery.
 
 Exploration is bounded to avoid an expensive, open-ended audit. If it cannot
 locate the application, it reports **not auditable** rather than inventing counts.

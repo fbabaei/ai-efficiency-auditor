@@ -222,16 +222,27 @@ The following flags were checked against CLI help during development; inspect
 your own version before reusing them:
 
 ```powershell
+$env:COPILOT_HOME = 'C:\path\to\new-disposable-copilot-config'
+$env:COPILOT_AUTO_UPDATE = 'false'
+$env:COPILOT_ALLOW_ALL = 'false'
+copilot config disableAllHooks true
+copilot config ide.autoConnect false
 Set-Location -LiteralPath 'C:\path\to\fixture-workspace'
 copilot --agent ai-efficiency-auditor `
   --available-tools view glob grep --allow-tool view glob grep `
   --disable-builtin-mcps --trust-folder --silent --stream off `
+  --sync-session=off --no-auto-update --disable-client-telemetry `
   --output-format json -p '<evaluation prompt>'
 ```
 
 The agent must also be installed in a native discovery location. This invocation
-does not disable arbitrary user integrations or host hooks; inspect them
-separately. Host event names can differ by version; `rg` is accepted as an
+uses a fresh configuration directory per mode and disables hooks, IDE auto-connect,
+built-in MCPs, session sync, updates and telemetry. Verify each configuration
+command succeeds before invoking the agent; inspect other integrations and
+organization policies separately. This is not an OS sandbox or local-only inference.
+CLI 1.0.105 ignores the profile's `argument-hint` and `agents` fields. The explicit
+tool allowlist, not `agents: []`, excludes delegation in these runs; retain the
+fields for supporting editors. Host event names can differ by version; `rg` is accepted as an
 observed read/search tool alongside `view`, `glob`, and `grep`.
 
 Run the session checker against captured JSONL:
@@ -255,6 +266,8 @@ The checker requires matched `toolCallId` start/completion events, boolean succe
 and text at `data.result.content`, or explicit `data.error.message` for failed
 calls. Error-message lines count too and never grant eligibility. Missing or
 unsupported result formats fail verification rather than silently omitting usage.
+Rejected starts are still correlated with their completions and returned text is
+budgeted; an invalid scope must not produce a spurious unmatched-completion error.
 It checks sequential metadata
 reads of at most three lines for every runtime fixture until a successful result
 establishes eligibility. Before invoking the agent, the runner must verify the
@@ -270,6 +283,18 @@ explicit eligible fixture or guidance file. Directory searches are rejected even
 with a `scenarios.json` glob, since basename globs also match nested files.
 Discover file paths separately with scoped glob calls.
 Glob inputs and returned paths are checked against the root.
+Equivalent scoped root-relative patterns (for example `src/**/*.py`) are accepted,
+as are exact manifest and trace names and globs within the three skill directories.
+Finite brace lists of approved literal paths are accepted, including conventional
+root-manifest filename discovery; each returned file still requires independent
+evidence authorization. Unknown alternatives, wildcard trace alternatives,
+malformed lists and lists exceeding 16 alternatives are rejected.
+Broad `.github/**/*`, `traces/*.json` and repository-wide discovery remain rejected,
+even when no files match. Application mode permits `pyproject.toml` and a successful
+root directory listing containing only the fixture's approved top-level names;
+recursive, excluded or unrecognized entries fail. Listed eligible files count
+toward file limits, and all directory-listing text counts toward the audit-wide
+line budget. Listing a trace directory never grants payload eligibility.
 Failed globs fail verification even if they contain error text, since partial path
 results cannot be distinguished reliably. In trace-only mode, only
 `traces/standalone.json` and relevant repository guidance are permitted, including

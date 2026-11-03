@@ -40,7 +40,30 @@ def _is_guidance(path: str) -> bool:
 def _is_evidence(path: str, mode: str) -> bool:
     if mode == "trace-only":
         return path == "traces/standalone.json" or _is_guidance(path)
-    return path in TRACE_HEADERS or path == "src/pipeline.py" or _is_guidance(path)
+    return path in TRACE_HEADERS or path in {"src/pipeline.py", "pyproject.toml"} or _is_guidance(path)
+
+
+def _is_literal_discovery(pattern: str, base_path: str, mode: str) -> bool:
+    candidates = [pattern]
+    if "{" in pattern or "}" in pattern:
+        if pattern.count("{") != 1 or pattern.count("}") != 1:
+            return False
+        prefix, _, rest = pattern.partition("{")
+        choices, closing, suffix = rest.partition("}")
+        alternatives = choices.split(",")
+        if not closing or not 1 <= len(alternatives) <= 16 or not all(alternatives):
+            return False
+        candidates = [prefix + choice + suffix for choice in alternatives]
+    allowed = GUIDANCE_FILES | {
+        path for path in TRACE_HEADERS if _is_evidence(path, mode)
+    }
+    if mode == "application":
+        allowed |= {
+            "src/pipeline.py", "pyproject.toml", "requirements.txt",
+            "setup.py", "setup.cfg", "pipfile", "package.json",
+        }
+    prefix = "" if base_path == "." else base_path + "/"
+    return all(prefix + candidate in allowed for candidate in candidates)
 
 
 def _verified_header(root: Path, path: str) -> list[str]:
@@ -156,7 +179,29 @@ def check_session(
             if type(data.get("success")) is not bool or not isinstance(content, str):
                 errors.append("tool completion needs success and returned text content")
                 continue
-            if call.tool == "glob":
+            if call.tool == "view" and call.paths == ["."] and mode == "application":
+                allowed_entries = {
+                    ".github", ".agents", ".claude", "agents.md", "readme.md",
+                    "pyproject.toml", "src", "traces",
+                }
+                returned_paths = []
+                if not data["success"]:
+                    errors.append("directory listing is not a successful top-level discovery result")
+                for line in content.splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        path = _relative_path(root, line.strip())
+                    except (OSError, RuntimeError, ValueError) as error:
+                        errors.append(f"invalid directory listing result: {error}")
+                        continue
+                    if path not in allowed_entries:
+                        errors.append("directory listing includes recursive or excluded evidence")
+                    elif _is_evidence(path, mode):
+                        returned_paths.append(path)
+                errors.extend(budget.record(returned_paths))
+                errors.extend(budget.record([], len(content.splitlines())))
+            elif call.tool == "glob":
                 if not data["success"]:
                     errors.extend(budget.record([], len(content.splitlines())))
                     errors.append("failed glob may contain partial paths; file scope and budget cannot be verified")
@@ -206,6 +251,8 @@ def check_session(
         seen_ids.add(call_id)
         tool = data.get("toolName")
         arguments = data.get("arguments")
+        # Correlate rejected starts too, without granting them evidence eligibility.
+        pending[call_id] = PendingCall(tool if isinstance(tool, str) else "", [])
         if not isinstance(tool, str) or tool not in {"view", "glob", "grep", "rg"}:
             errors.append(f"unexpected tool: {tool}")
             continue
@@ -229,22 +276,34 @@ def check_session(
                 ".": {
                     "agents.md", "readme.md", "{agents.md,readme.md}",
                     "{agents.md,readme.md,.github/copilot-instructions.md}",
-                    "**/agents.md", "**/copilot-instructions.md", "**/skill.md",
+                    ".github/copilot-instructions.md", "pyproject.toml",
+                    "src/*.py", "src/**/*.py", "traces/scenarios.json",
+                    "traces/unmarked.json", "traces/standalone.json",
+                    "{.github,.agents,.claude}/skills/**/skill.md",
                 },
-                "traces": {"scenarios.json", "standalone.json"},
+                "traces": {"scenarios.json", "unmarked.json", "standalone.json"},
                 "src": {"*.py", "**/*.py"},
             }
             if mode == "trace-only":
                 allowed_patterns.pop("src")
+                allowed_patterns["."] -= {
+                    "pyproject.toml", "src/*.py", "src/**/*.py",
+                    "traces/scenarios.json", "traces/unmarked.json",
+                }
                 allowed_patterns["traces"] = {"standalone.json"}
             for directory in SKILL_DIRECTORIES:
                 allowed_patterns[directory.rstrip("/")] = {"**/skill.md", "skill.md"}
+                allowed_patterns["."].update({f"{directory}**/skill.md", f"{directory}skill.md"})
             pattern = arguments.get("pattern")
             if not isinstance(pattern, str) or any(
                 pattern.replace("\\", "/").lower() not in allowed_patterns.get(path, set())
+                and not _is_literal_discovery(pattern.replace("\\", "/").lower(), path, mode)
                 for path in paths
             ):
                 errors.append("glob scope or pattern can include excluded evidence")
+            pending[call_id] = PendingCall(tool, paths)
+            continue
+        if tool == "view" and paths == ["."] and mode == "application":
             pending[call_id] = PendingCall(tool, paths)
             continue
         if tool in {"rg", "grep"}:
@@ -252,6 +311,7 @@ def check_session(
                 errors.append("search must target one fixture file for budget attribution")
         if len(paths) != 1 or not _is_evidence(paths[0], mode):
             errors.append("read/search path is outside approved fixture or guidance evidence")
+            pending[call_id] = PendingCall(tool, paths)
             continue
         path = paths[0]
         errors.extend(budget.record(paths))

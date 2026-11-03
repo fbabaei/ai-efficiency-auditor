@@ -2,6 +2,16 @@
 
 ## 0.4.0 - Unreleased
 
+- Narrow discovery to exact guidance/manifest and named trace paths, with scoped
+  source/skill globs instead of broad profile or sibling-trace enumeration.
+- Accept scoped root-relative glob equivalents, application-manifest reads and
+  validated top-level fixture listings in the session checker. Correlate rejected
+  starts with their real completions without granting evidence eligibility.
+- Document that CLI ignores `agents` and `argument-hint`; enforce the effective
+  read/search-only tool surface separately and isolate evaluation host settings.
+- Record 66 passing offline tests and fresh application/trace-only live captures:
+  both original reports and session checks pass after checker-only finite-pattern
+  compatibility fixes; preserve earlier failed-session evidence and host caveats.
 - Require an independently established payload-free boundary before the first
   runtime metadata read; unknown boundaries require exact-path user sanitization
   confirmation instead of a speculative three-line read.

@@ -58,6 +58,10 @@ copilot --agent ai-efficiency-auditor
 Alternatively, start `copilot` and use `/agent` to select the auditor. Verify the
 selected agent is **AI Efficiency Auditor** before submitting your audit
 request. Do not approve execution, edit, web, or delegation tools for this role.
+CLI 1.0.105 warns that it ignores `argument-hint` and `agents`. Retain those fields
+for supporting editors, but do not rely on `agents: []` to disable CLI delegation.
+For automated runs, explicitly restrict the effective tools as shown in the
+[evaluation guide](../evaluations/README.md#cli-capture-and-session-checks).
 
 The same profile now audits tool and model efficiency; no additional permissions,
 credentials or integrations are needed. For example:
@@ -81,11 +85,12 @@ direct statement naming the exact path and range, or an independently trusted
 format contract. Never assume the first three lines are metadata. If the boundary
 is unknown, skip the artifact unless exact-path sanitization is directly confirmed.
 
-The 0.4.0 CLI smoke evaluation covers all 20 synthetic application cases and a
-separate trace-only scenario. The first application report failed the currency
-field shape; a clarified prompt produced a passing second report. This is not a
-repeatability study or cross-client certification; see the
-[validation summary](validation.md) for accepted captures and checker corrections.
+The latest restricted 0.4.0 captures pass all 20 synthetic application cases, the
+separate trace-only scenario, and session scope checks after checker-only pattern
+compatibility corrections. Earlier development runs include a currency-field
+report failure and an application discovery-scope failure; they remain documented.
+This is not a repeatability study or cross-client certification; see the
+[validation summary](validation.md) for capture provenance and checker corrections.
 
 This is a local CLI session using a model service, not local-only inference.
 Inspect workspace instructions, skills, hooks, plugins, and MCP configuration

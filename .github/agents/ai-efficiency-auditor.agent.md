@@ -72,6 +72,13 @@ For application audits, if the requested application or scenario cannot be
 located, or searches return no matching manifests or entry points, stop the audit,
 state the search scope and paths checked, and report 'not auditable' with no call
 counts. Do not silently substitute traces for an explicitly requested application.
+Discover exact named guidance files and manifests first. Use narrow globs rooted
+at a relevant source or skill directory; never enumerate all of .github, the
+repository, or a trace directory to find a few known files. Do not inspect the
+installed auditor definition as application evidence. When the request names
+trace paths, use only those paths; do not glob sibling traces. Reuse established
+paths rather than rediscovering them. In trace-only mode, skip directory listings
+and application-manifest discovery.
 Discover manifests, entry
 points, orchestration, tool registration/dispatch, model clients and selection,
 prompt/context construction, output consumption, retry configuration, caching,

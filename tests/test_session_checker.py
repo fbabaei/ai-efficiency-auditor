@@ -269,6 +269,140 @@ class SessionCheckerTests(unittest.TestCase):
             "No files matched the pattern.",
         ))), [])
 
+    def test_accepts_application_manifest_and_top_level_listing(self) -> None:
+        self.assertEqual(self.check(session(
+            ("view", {"path": "."}, ".github\nREADME.md\npyproject.toml\nsrc\ntraces"),
+            ("glob", {"pattern": "pyproject.toml"}, "pyproject.toml"),
+            ("view", {"path": "pyproject.toml"}, "[project]\nname = 'fixture'"),
+        )), [])
+        for tool, arguments in (
+            ("view", {"path": "."}),
+            ("view", {"path": "pyproject.toml"}),
+            ("glob", {"pattern": "pyproject.toml"}),
+        ):
+            with self.subTest(tool=tool, arguments=arguments):
+                self.assertTrue(self.check(
+                    session((tool, arguments, "")), mode="trace-only",
+                ))
+
+    def test_root_listing_rejects_recursive_or_unapproved_entries(self) -> None:
+        for content in (
+            "private", "expected.json", "tests", "traces/scenarios.json",
+            ".github/agents/ai-efficiency-auditor.agent.md", "../outside",
+            '{"sanitized": true}', "README.md\nprivate",
+        ):
+            with self.subTest(content=content):
+                self.assertTrue(self.check(session(("view", {"path": "."}, content))))
+        events = session(("view", {"path": "."}, "README.md"))
+        events[1]["data"]["success"] = False
+        self.assertTrue(self.check(events))
+        events = session(("view", {"path": "."}, "src\n" * 15_001))
+        self.assertIn("audit-wide exploration budget exceeded", self.check(events))
+        self.assertTrue(self.check(session(
+            ("view", {"path": "."}, "traces"),
+            ("view", {"path": "traces/scenarios.json"}, "payload"),
+        )))
+
+    def test_accepts_equivalent_root_relative_scoped_globs(self) -> None:
+        for pattern, result in (
+            ("src\\**\\*.py", "src/pipeline.py"),
+            ("src/*.py", "src/pipeline.py"),
+            ("traces/scenarios.json", "traces/scenarios.json"),
+            ("traces/unmarked.json", "traces/unmarked.json"),
+            (".github/skills/**/SKILL.md", ".github/skills/example/SKILL.md"),
+            ("{.github,.agents,.claude}\\skills\\**\\SKILL.md",
+             ".agents/skills/example/SKILL.md"),
+        ):
+            with self.subTest(pattern=pattern):
+                self.assertEqual(self.check(session((
+                    "glob", {"paths": str(ROOT), "pattern": pattern}, result,
+                ))), [])
+        self.assertEqual(self.check(session((
+            "glob", {"pattern": "traces/standalone.json"}, "traces/standalone.json",
+        )), mode="trace-only"), [])
+        self.assertTrue(self.check(session((
+            "glob", {"pattern": "src/**/*.py"}, "",
+        )), mode="trace-only"))
+
+    def test_rejects_broad_discovery_even_without_matches(self) -> None:
+        for pattern in (".github/**/*", "traces/*.json", "**/*", "**/SKILL.md"):
+            with self.subTest(pattern=pattern):
+                self.assertIn("glob scope or pattern can include excluded evidence", self.check(
+                    session(("glob", {"pattern": pattern}, "No files matched the pattern.")),
+                ))
+
+    def test_accepts_exact_and_finite_literal_discovery(self) -> None:
+        for paths, pattern, result in (
+            (".", "src/pipeline.py", "src/pipeline.py"),
+            (".", "traces/{scenarios,unmarked}.json",
+             "traces/scenarios.json\ntraces/unmarked.json"),
+            ("traces", "{scenarios,unmarked}.json",
+             "traces/scenarios.json\ntraces/unmarked.json"),
+            (".", "{pyproject.toml,requirements.txt,setup.py,setup.cfg,Pipfile,package.json}",
+             "pyproject.toml"),
+        ):
+            with self.subTest(paths=paths, pattern=pattern):
+                self.assertEqual(self.check(session((
+                    "glob", {"paths": paths, "pattern": pattern}, result,
+                ))), [])
+                self.assertTrue(self.check(session((
+                    "glob", {"paths": paths, "pattern": pattern}, result,
+                )), mode="trace-only"))
+        self.assertEqual(self.check(session((
+            "glob", {"pattern": "{README.md,traces/standalone.json}"},
+            "traces/standalone.json",
+        )), mode="trace-only"), [])
+
+    def test_literal_discovery_rejects_excluded_or_malformed_alternatives(self) -> None:
+        for pattern in (
+            "{README.md,expected.json}", "traces/{scenarios,*}.json",
+            "{src/pipeline.py,../outside}", "{README.md,}",
+            "{README.md", "README.md}", "{{README.md}}",
+            "{" + ",".join(["README.md"] * 17) + "}",
+        ):
+            with self.subTest(pattern=pattern):
+                self.assertTrue(self.check(session((
+                    "glob", {"pattern": pattern}, "",
+                ))))
+        for result in ("expected.json", "requirements.txt", "../outside"):
+            with self.subTest(result=result):
+                self.assertTrue(self.check(session((
+                    "glob", {"pattern": "{pyproject.toml,requirements.txt}"}, result,
+                ))))
+        self.assertTrue(self.check(session((
+            "glob", {"pattern": "traces/{scenarios,unmarked}.json"},
+            "traces/standalone.json",
+        )), mode="trace-only"))
+
+    def test_rejected_starts_still_have_correlated_completions(self) -> None:
+        for tool, arguments in (
+            ("view", {"path": "private/secrets.json"}),
+            ("view", {"path": "../outside"}),
+            ("view", {}),
+            ("rg", {"paths": ["README.md", "src/pipeline.py"]}),
+            ("powershell", {"command": "ignored"}),
+        ):
+            with self.subTest(tool=tool, arguments=arguments):
+                events = session((tool, arguments, "text"))
+                errors = self.check(events)
+                self.assertTrue(errors)
+                self.assertNotIn("duplicate or unmatched tool completion", errors)
+                self.assertNotIn(
+                    "missing tool completions; returned-content budget cannot be verified",
+                    errors,
+                )
+                missing = self.check(events[:1] + events[2:])
+                self.assertIn(
+                    "missing tool completions; returned-content budget cannot be verified",
+                    missing,
+                )
+                duplicate = self.check(events[:2] + [events[1]] + events[2:])
+                self.assertIn("duplicate or unmatched tool completion", duplicate)
+        errors = self.check(session((
+            "view", {"path": "private/secrets.json"}, "line\n" * 15_001,
+        )))
+        self.assertIn("audit-wide exploration budget exceeded", errors)
+
     def test_rejects_broad_searches_in_every_output_mode(self) -> None:
         for mode in ("files_with_matches", "count", "content"):
             self.assertTrue(self.check(session((
