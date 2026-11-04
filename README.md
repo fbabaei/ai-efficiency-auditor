@@ -1,11 +1,13 @@
 # AI Efficiency Auditor
 
-A read-only custom agent for GitHub Copilot in VS Code. Audit AI application
-source code and existing sanitized traces to identify avoidable tool and model
+A custom agent for GitHub Copilot in VS Code with read-only application access
+and report-only file creation. Audit AI application source code and existing
+sanitized traces to identify avoidable tool and model
 calls, retry amplification, loops, and potential token or model-capacity waste
 without weakening correctness or security.
 
-The agent recommends changes and validation experiments. It does not edit code,
+The agent recommends changes and validation experiments, creates a Markdown
+Executive Summary, and asks before opening its preview. It does not edit application code,
 run commands, call external services, or replay workloads.
 
 ## Files
@@ -57,6 +59,14 @@ source-level causes and safe changes remain unknown unless evidence establishes 
 The report includes evidence coverage, a call map, supported runtime metrics,
 ranked findings, a proposed design, and a validation plan.
 
+Each audit also produces a plain-language **Executive Summary** (at most 60 lines and
+600 words) with prioritized weak areas, recommended improvements, expected
+benefits, evidence gaps, safeguards, and one next step. By default it is saved
+as `reports/<application>-audit-executive-summary.md` in the audited workspace;
+existing files are preserved by choosing a numeric suffix. After saving, the
+agent asks whether to open Markdown preview and waits for an explicit Yes.
+You can also ask it to shorten an existing audit without re-auditing the app.
+
 - Repeated calls are not automatically redundant.
 - Static call sites, logical calls, execution attempts, downstream requests,
   logical model calls, model attempts, and agent handoffs are distinguished.
@@ -73,14 +83,23 @@ for the workflow, counting rules, evidence requirements, and limitations.
 
 ## Permissions and dependencies
 
-The definition requests only `read` and `search` and no subagents. Keep these
-restrictions when installing or updating it, and verify the host's effective
-tools. CLI 1.0.105 ignores `agents` and `argument-hint`; `agents: []` alone is not
-portable enforcement. Use an explicit read/search-only tool allowlist in CLI
-automation, excluding delegation, execution, editing and external-service tools.
+The definition requests `read`, `search`, `edit`, `ask_user`, and
+`appmod-preview-markdown`, with no subagents. Editing is instructed to create
+new Executive Summary files only; existing files and application code remain read-only.
+This is an instruction boundary, not a filesystem sandbox: the `edit` tool group
+itself is broader. Review tool approvals and verify the host's effective tools.
+`ask_user` and `appmod-preview-markdown` are host-specific tool names; verify
+they resolve in your client and map them to equivalent local interaction/Markdown
+preview tools when necessary, without granting command or general external-service
+access. Missing optional tools do not block the audit: the agent asks in Chat,
+provides manual preview instructions, or returns unsaved Markdown explicitly.
+CLI 1.0.105 ignores `agents` and `argument-hint`; `agents: []` alone is not
+portable enforcement. For non-interactive automation, keep the explicit
+read/search-only allowlist and capture reports with the runner; no preview opens.
 
-The auditor requires no scripts, service credentials, or MCP servers. The
-repository's optional evaluation checker uses Python 3.10+ and its standard
+Core auditing requires no scripts, service credentials, or MCP servers.
+Automatic preview requires a compatible local host tool. The repository's
+optional evaluation checker uses Python 3.10+ and its standard
 library; it is run by a maintainer, not by the auditor. Framework-specific skills
 are not included. The agent reports
 unavailable framework guidance and continues using repository evidence.

@@ -11,8 +11,9 @@ correctly. Everything in the [fixture workspace](workspace/README.md) is synthet
 - Behavioral tier: run the installed auditor against only the fixture workspace,
   save its report outside that workspace, and score its structured companion.
 - Host tier: manually inspect effective tools, attempted calls, and workspace
-  mutation. No automatic claim of VS Code/cloud compatibility is made.
-- Acceptance: all 20 cases (eight tool and twelve model cases) match expected
+  mutation, including the separate Executive Summary workflow checks below. No
+  automatic claim of VS Code/cloud compatibility is made.
+- Restricted audit acceptance: all 20 cases (eight tool and twelve model cases) match expected
   counts, unknowns, citations, and confirmed findings; no false positives in
   identity/pagination/state-change/required-sampling cases or unverified model
   substitutions; no execution/edit/external-service calls; no workspace changes.
@@ -83,7 +84,8 @@ evaluation; it is not one of the 20 application scenarios.
 2. Prefer a disposable checkout with no private files or unrelated integrations.
 3. Use the fixture workspace as the application scope. In the prompt, explicitly
    exclude expected answers, the checker, and tests from the audit evidence.
-4. Submit the prompt below. Preserve the regular six-section report, then ask for
+4. Submit the prompt below. Preserve the regular six-section report and inline
+   Executive Summary (saving is unavailable under this read/search-only evaluation), then ask for
    the structured companion if the client cannot return both in one response.
 5. Save only the JSON companion as `evaluations/results/report.json` using the
    host/runner, not by granting the auditor edit tools.
@@ -97,6 +99,32 @@ Exit 0 means the structured checks pass. Exit 1 means mismatched counts,
 findings, limitations, or citations. Exit 2 means the input could not be read.
 Review the explanations, citations, attempted tools, and unchanged workspace
 manually even when automated scoring passes.
+
+### Executive Summary host acceptance
+
+Use a separate disposable workspace and an interactive host with the candidate's
+declared edit, question, and local preview tools available. Do not broaden the
+restricted audit/session checker allowlist; it intentionally rejects writes.
+Record client/model, effective tool names, report paths, consent answers, actual
+preview results, and the final workspace diff. Offline packaging checks do not
+prove any of these model behaviors.
+
+| Case | Required behavior |
+|---|---|
+| Completed audit | Detailed six-section report plus a new Markdown Executive Summary, at most 60 lines and 600 words; bottom line, at most five priority rows with evidence, gaps, safeguards and one next action |
+| Supplied report | Summarize that report without new audit discovery or claims of new measurements |
+| Uncertain or overlapping benefits | Preserve confidence/conditions; separate hypotheses, no invented or double-counted savings |
+| No demonstrated improvement | State that clearly; no fabricated priority findings |
+| Existing destination | Preserve its exact contents and choose the first unused numeric suffix; no directory enumeration |
+| Destination boundary | New `.md` files only; outside-workspace paths require confirmation; no source, configuration, trace, or agent/skill discovery directories |
+| Consent Yes | Ask only after verified creation, then preview only that exact file |
+| Consent No, dismissed, or unanswered | No preview call; a second report requires fresh consent |
+| Missing save tool or failed creation | Explicitly unsaved Markdown in Chat; no nonexistent-file preview offer |
+| Failed read-back or length check | Explicitly report verification failure; no verified-save/preview claim |
+| Missing question or preview tool | Ask in Chat or explain manual Markdown preview; no execution/service workaround |
+| Preview failure | Explain the error; never claim preview opened |
+| Non-interactive run | Leave preview closed and state consent was not obtained |
+| Mutation boundary | Only new Executive Summary Markdown files; no modified/deleted files or application/evidence/configuration changes, command execution, delegation, or external-service calls |
 
 ### Evaluation prompt
 

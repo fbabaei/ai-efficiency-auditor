@@ -19,13 +19,46 @@ class PackagingTests(unittest.TestCase):
         self.assertTrue(agent.startswith("---\n"))
         header, body = agent[4:].split("\n---\n", 1)
         self.assertIn("name: AI Efficiency Auditor", header.splitlines())
-        self.assertIn("tools: [read, search]", header.splitlines())
+        self.assertIn(
+            "tools: [read, search, edit, ask_user, appmod-preview-markdown]",
+            header.splitlines(),
+        )
         self.assertIn("agents: []", header.splitlines())
         self.assertIn("user-invocable: true", header.splitlines())
         self.assertRegex(header, r"(?m)^description: \".+\"$")
         expected = (ROOT / "evaluations" / "expected.json").read_text(encoding="utf-8")
         version = json.loads(expected)["methodology_version"]
         self.assertIn(f"Audit methodology version: {version}.", body)
+
+    def test_executive_summary_contract_is_declared(self) -> None:
+        agent = (ROOT / ".github" / "agents" / "ai-efficiency-auditor.agent.md").read_text(
+            encoding="utf-8"
+        )
+        agent = " ".join(agent.split())
+        for requirement in (
+            "at most 60 lines and 600 words",
+            "Priority | Weak area | Recommended improvement | Expected benefit | Evidence",
+            "do not replace the detailed six-section report",
+            "without conducting a new audit",
+            "do not add overlapping savings",
+            'use "Executive Summary" in the title',
+            "reports/<application>-audit-executive-summary.md",
+            "never overwrite it",
+            "must be a new `.md` file",
+            "Never write in source, configuration, trace, or agent/skill discovery directories",
+            "Check both length limits before saving",
+            "Verify the saved file using a read tool",
+            "If read-back fails",
+            "Open the Executive Summary in Markdown preview?",
+            "Only an explicit Yes authorizes",
+            "Ask again for each newly created report",
+            "file was not saved",
+            "preview consent was not obtained",
+            "Markdown: Open Preview",
+            "Report permission, save, read-back, and preview errors explicitly",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, agent)
 
     def test_documentation_links_resolve(self) -> None:
         paths = [ROOT / "README.md", ROOT / "CHANGELOG.md"]

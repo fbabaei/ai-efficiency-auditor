@@ -2,6 +2,16 @@
 
 ## Current candidate: 0.4.0
 
+### Executive Summary workflow validation scope
+
+The candidate now requests report creation and optional local interaction/preview
+tools in addition to audit reads/searches. The historical captures below used
+explicit read/search-only allowlists and do not validate saving reports, preview
+consent, or these added tools. Packaging checks verify the declared workflow,
+not model compliance. The interactive host acceptance checks in the
+[evaluation guide](../evaluations/README.md#executive-summary-host-acceptance) remain
+required before claiming the new workflow works in a specific client.
+
 ### Latest discovery-scope fix and live evaluation
 
 On 2026-11-03, the updated agent was run once in application mode and once in

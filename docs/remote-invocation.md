@@ -23,7 +23,8 @@ not the `.github/agents/` path used inside an application repository.
    documentation outside that directory and preserve the MIT license.
 4. Review the change through the organization's normal pull request process and
    merge it into the default branch.
-5. Verify discovery and the read/search-only tool surface with a member account.
+5. Verify discovery and the intended tool surface with a member account: audit
+   reads/searches, report-only creation, and optional local consent/preview tools.
    Organization discovery can depend on client settings, account access, and
    policy.
 6. Assign a maintainer to review and roll out upstream changes. Copies do not
@@ -57,14 +58,19 @@ copilot --agent ai-efficiency-auditor
 
 Alternatively, start `copilot` and use `/agent` to select the auditor. Verify the
 selected agent is **AI Efficiency Auditor** before submitting your audit
-request. Do not approve execution, edit, web, or delegation tools for this role.
+request. Do not approve execution, web, or delegation tools for this role.
+For interactive report saving, approve only creation of a new Markdown
+Executive Summary, never application edits or overwrites. Preview is optional, local, and
+requires explicit consent; unsupported hosts provide manual instructions.
 CLI 1.0.105 warns that it ignores `argument-hint` and `agents`. Retain those fields
 for supporting editors, but do not rely on `agents: []` to disable CLI delegation.
 For automated runs, explicitly restrict the effective tools as shown in the
 [evaluation guide](../evaluations/README.md#cli-capture-and-session-checks).
 
-The same profile now audits tool and model efficiency; no additional permissions,
-credentials or integrations are needed. For example:
+Core tool/model auditing still needs only read/search access. Executive Summary
+creation adds edit access subject to a report-only instruction boundary; optional
+interaction/preview tool names vary by host. Restricted CLI runs return the
+Executive Summary in Chat for the runner to save and leave preview closed. For example:
 
 > Audit this application's search flow for duplicate tool calls, repeated model
 > inference, and retry amplification. Use eligible sanitized traces to report

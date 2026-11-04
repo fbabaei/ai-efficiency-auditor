@@ -2,6 +2,10 @@
 
 ## 0.4.0 - Unreleased
 
+- Add an evidence-backed Markdown Executive Summary of weak areas and recommended
+  improvements alongside detailed audits, with report-only creation, no
+  overwrites, and explicit consent before optional local preview. Document
+  host-specific tools, unsaved/unsupported fallbacks, and separate host checks.
 - Narrow discovery to exact guidance/manifest and named trace paths, with scoped
   source/skill globs instead of broad profile or sibling-trace enumeration.
 - Accept scoped root-relative glob equivalents, application-manifest reads and

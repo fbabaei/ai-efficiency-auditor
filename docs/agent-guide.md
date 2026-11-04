@@ -1,7 +1,8 @@
 # AI Efficiency Auditor
 
 The [AI Efficiency Auditor](../.github/agents/ai-efficiency-auditor.agent.md)
-is a read-only reviewer for AI applications. It examines source code and existing
+is a reviewer with read-only application access and report-only file creation.
+It examines source code and existing
 sanitized traces to answer:
 
 > Which tool and model calls are avoidable, where might tokens or model capacity
@@ -205,10 +206,17 @@ summed when removing one model step also removes its tool work.
 
 ## Capabilities and limits
 
-The agent exposes only `read` and `search`, with no subagents. Its instructions
+The agent exposes `read`, `search`, `edit`, `ask_user`, and
+`appmod-preview-markdown`, with no subagents. Its sole write exception is creating
+a new Markdown Executive Summary; preview requires explicit user consent. These
+host-specific interaction/preview names must resolve to compatible local tools.
+If unavailable, it uses Chat and manual save/preview instructions. The `edit`
+group is not path-restricted by the host; report-only writes are an instruction
+boundary, not a sandbox. Its instructions
 prohibit:
 
-- Editing files or running commands.
+- Editing application code, configuration, evidence, or existing files.
+- Running commands, including commands to save or preview reports.
 - Executing application tools or calling external services.
 - Invoking other agents.
 - Provisioning resources.
@@ -253,6 +261,30 @@ are recorded; unavailable provenance stays unknown.
 
 If no redundant calls are demonstrated, the report says so and identifies what
 evidence could resolve uncertainty.
+
+### Executive Summary and preview
+
+Every audit also creates a plain-language Executive Summary of at most 60 lines and
+600 words. It includes a bottom line, up to five evidence-backed priority rows
+(`Priority | Weak area | Recommended improvement | Expected benefit | Evidence`),
+separate evidence gaps, safeguards to retain, and one next action. It preserves
+ranking, confidence, conditional benefits, unknowns, and non-overlapping savings.
+An existing supplied audit can be shortened without new source inspection.
+The detailed six-section report is still required for new audits.
+
+The default output is `reports/<application>-audit-executive-summary.md` in the audited
+workspace (`trace` for trace-only audits). Existing files are never overwritten;
+the agent checks exact paths and uses the first available numeric suffix.
+An explicitly requested outside-workspace destination requires confirmation.
+After reading back the saved report, the agent links it and asks whether to open
+Markdown preview. Only an explicit Yes opens that file; declining, dismissing,
+or not answering leaves it closed. Each new report requires fresh consent.
+
+Without a save tool or after a save failure, the agent explains that the report
+was not saved and returns Markdown in Chat. Without interaction tools it asks
+in Chat; without preview tools it explains how to use **Markdown: Open Preview**
+manually. Non-interactive runs never open preview. Save, verification, and
+preview errors must be reported rather than presented as success.
 
 ## Example invocation
 
