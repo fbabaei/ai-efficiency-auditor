@@ -68,6 +68,10 @@ class PackagingTests(unittest.TestCase):
         for requirement in (
             "smallest verified file-and-line range",
             "include each relevant location",
+            "Cite repeated-call statements separately from return statements",
+            "Keep verified file-and-line notation visible",
+            "not only in link targets or reference definitions",
+            "show each affected path and range directly alongside its symbol",
             "tie the recommended improvement to it",
             "omit secrets or sensitive values",
             "Do not copy code into the Executive Summary",

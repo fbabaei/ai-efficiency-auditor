@@ -2,6 +2,17 @@
 
 ## 0.4.0 - Unreleased
 
+- Reject hidden-only Markdown source citations and invented locations anywhere
+  in missing-source summaries; safely compare oversized line numbers. Verify
+  91 offline tests and rescore unchanged captures without replacing prior scores.
+- Keep source paths/ranges visible in report citations and summary location cells;
+  cite repeated calls separately from unrelated return statements.
+- Close reporting-checker false passes for substring symbols/trace IDs,
+  malformed citation suffixes and extra empty table columns, with regression
+  coverage that retains Markdown punctuation and Windows-path support.
+- Allow separate context citations alongside exact read-site evidence without
+  accepting broader ranges as substitutes; record focused live reporting results
+  and remaining host-interaction limitations.
 - Add four focused reporting evaluation cases and a captured-Markdown checker for
   multi-site source ranges, trace-only unknown locations, supplied-report
   provenance, priority tables and both summary length limits. Add negative

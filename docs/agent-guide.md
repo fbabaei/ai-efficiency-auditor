@@ -252,7 +252,11 @@ The report contains:
 
 Source-backed weaknesses and redundancy findings identify the affected file,
 function or section, and smallest verified line range. Findings spanning repeated
-or duplicated code identify each relevant site and explain its role. Detailed
+or duplicated code identify each relevant site and explain its role. Call-site
+ranges exclude unrelated return statements or surrounding context. File-and-line
+notation stays visible in citation labels or adjacent text; each summary Code
+location cell shows the affected paths and ranges directly beside the symbol,
+not only in link targets or reference definitions. Detailed
 reports may include minimal relevant code excerpts with sensitive values omitted;
 Executive Summaries include locations, not code excerpts. Trace-only findings
 say "Code location not verified" when no source mapping is available. Summaries

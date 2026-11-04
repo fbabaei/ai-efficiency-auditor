@@ -16,9 +16,65 @@ The [focused reporting evaluation](../evaluations/README.md#focused-reporting-be
 adds four separately scored cases for multi-site source ranges, unmapped traces,
 and supplied-report location provenance. Offline mutation tests exercise its
 Markdown checker, including both summary length limits; they are not generated
-agent outputs. No live captures of these four cases are recorded here. Site
-roles, summary fidelity and supplied-report tool scope still need manual review,
-and saving/preview still need the host matrix.
+agent outputs. Focused live captures and their limits are recorded below;
+saving/preview still need the host matrix.
+
+### Focused reporting captures
+
+On 2026-11-04, four reporting cases ran in separate disposable synthetic
+workspaces/configurations with Copilot CLI 1.0.105 on Windows. The host recorded
+`gpt-6.1-sol`; no model was selected by the runner. All exited 0 with unchanged
+before/after file inventories and SHA-256 hashes. Effective tools were restricted
+to `view`, `glob` and `grep`; hooks, IDE auto-connect, built-in MCPs, sync,
+updates and telemetry were disabled. This is not OS sandboxing or local inference.
+
+| Capture | Reporting checker | Review |
+|---|---|---|
+| Initial `multi-site` | FAIL | Paths hidden behind reference labels; second read grouped with return at lines 11-12 rather than the exact read at line 11 |
+| `trace-unmapped` | PASS | Both record IDs and unknown source mapping retained; zero ranked findings; sanitization/coverage metadata successfully read before payload |
+| `supplied-locations` | PASS | Supplied symbol, range and unverified provenance retained; zero tool calls |
+| `supplied-missing` | PASS | Missing-location label retained without invented locations; zero tool calls |
+| Separate `multi-site-visible-v2` | PASS after checker-only context correction | Exact reads at lines 10 and 11 visible in detail and location cell; contract, return and context cited separately |
+
+The initial four captures used agent SHA-256
+`DCC148DD7C8EEC65ACCFFE5BA76027C088AFB0E038EC6D08A5242E01EC847F13`.
+The separate v2 capture used
+`A3C1AFF72B0157B319BF60DB45088C17EFC0A86C93B5B3D1EA7A55788DEAAF71`.
+Both used fixture revision `7875bdb2b35e1555185d7b79c86f0452ecbd328d`.
+Raw events, exact responses, faithful checker envelopes, provenance metadata and
+scores are retained locally under ignored
+`evaluations\results\reporting-live-hardening`; these are not published artifacts.
+
+The initial multi-site prompt omitted the guide's explicit visible-path
+serialization instruction. Before v2, both the agent's visible-citation guidance
+and the prompt changed; v2 explicitly requested visible repository-relative
+`path:start-end` citations. This is not an identical-condition rerun. The other
+three cases were not rerun against the v2 agent. Original failed output remains
+unchanged and still fails the revised checker.
+
+The prior checker also rejected v2's legitimate separately labeled context and
+return citations despite its exact call-site evidence. A synthetic regression
+now permits additional context but still rejects broad-range-only evidence;
+the same unedited capture was rescored without another model run. Offline
+verification passed 86 tests on Python 3.15.0a5, including substring identifiers,
+malformed citation suffixes, extra empty columns and contextual citations.
+
+Subsequent checker hardening passed 91 offline tests on the same interpreter,
+including hidden link destinations/reference identifiers/comments, visible
+labels and literal inline code, invented locations throughout missing-source
+summaries, and 5,000-digit line numbers without checker or CLI exceptions.
+Rescoring all five unchanged envelopes with this checker retained the results
+above: the initial multi-site capture fails; v2 and the other three pass. These
+are new checker scores, not new model runs; prior scores remain preserved.
+
+Manual review of v2 confirmed four scoped root/file globs and two source/guidance
+reads, no editing or execution tools, and projected successful-path savings
+rather than measured downstream, latency or cost claims. The report retains
+identity, freshness, request-isolation and error-contract qualifications,
+including the removed second failure opportunity. A full source-file read was
+used to audit the named function. These single smoke captures do not establish
+repeatability or VS Code/cloud compliance. Report creation, collision handling,
+read-back and preview consent remain untested in an interactive host.
 
 ### Latest discovery-scope fix and live evaluation
 

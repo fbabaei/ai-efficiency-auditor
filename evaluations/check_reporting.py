@@ -12,9 +12,9 @@ HEADER = [
     "Expected benefit", "Evidence",
 ]
 SOURCE_LOCATION = re.compile(
-    r"(?<![\w./-])src/pipeline\.py:(\d+)(?:-(\d+))?(?![\w-])"
+    r"(?<![\w./-])src/pipeline\.py:([0-9]+)(?:-([0-9]+))?(?![\w/:-]|\.[\w./-])"
 )
-SUPPLIED_LOCATION = re.compile(r"(?<![\w./-])src/worker\.py:42-44(?![\w-])")
+SUPPLIED_LOCATION = re.compile(r"(?<![\w./-])src/worker\.py:42-44(?![\w/:-]|\.[\w./-])")
 ANY_LOCATION = re.compile(r"\b[\w./-]+\.\w+:\d+")
 
 
@@ -26,7 +26,10 @@ def _priority_rows(summary: str) -> tuple[list[list[str]], list[str]]:
         if not line.strip().startswith("|"):
             current = None
             continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        content = line.strip()[1:]
+        if content.endswith("|"):
+            content = content[:-1]
+        cells = [cell.strip() for cell in content.split("|")]
         if cells == HEADER:
             current = []
             tables.append(current)
@@ -50,15 +53,67 @@ def _priority_rows(summary: str) -> tuple[list[list[str]], list[str]]:
     return rows, errors
 
 
+def _has_identifier(text: str, identifier: str) -> bool:
+    return re.search(r"(?<![\w-])" + re.escape(identifier) + r"(?![\w-])", text) is not None
+
+
+def _visible_markdown(text: str) -> str:
+    """Keep citation text, excluding comments, reference definitions and link targets."""
+    text = re.sub(r"<!--[\s\S]*?-->", "", text)
+    text = re.sub(r"(?m)^ {0,3}\[[^\]\n]+\]:[^\n]*(?:\n[ \t]+[^\n]+)*", "", text)
+    parts = []
+    cursor = 0
+    while match := re.search(r"`+|\]\(|\]\[[^\]\n]*\]", text[cursor:]):
+        start = cursor + match.start()
+        stop = cursor + match.end()
+        parts.append(text[cursor:start])
+        token = match[0]
+        if token.startswith("`"):
+            closing = re.search(r"(?<!`)" + re.escape(token) + r"(?!`)", text[stop:])
+            if closing is not None:
+                stop += closing.end()
+            parts.append(text[start:stop])
+        elif token.startswith("]["):
+            parts.append("]")
+        else:
+            depth = 1
+            quoted = ""
+            while stop < len(text) and depth:
+                char = text[stop]
+                if char == "\\":
+                    stop += 2
+                    continue
+                if quoted:
+                    if char == quoted:
+                        quoted = ""
+                elif char == "<":
+                    quoted = ">"
+                elif char in "\"'" and text[stop - 1].isspace():
+                    quoted = char
+                elif char == "(":
+                    depth += 1
+                elif char == ")":
+                    depth -= 1
+                stop += 1
+            parts.append("]" if depth == 0 else text[start:stop])
+        cursor = stop
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
 def _has_both_sites(text: str) -> bool:
+    text = _visible_markdown(text)
     covered = set()
     for match in SOURCE_LOCATION.finditer(text.replace("\\", "/")):
-        start = int(match[1])
-        stop = int(match[2] or match[1])
-        if start > stop or start < 10 or stop > 11:
+        start = match[1].lstrip("0") or "0"
+        stop = (match[2] or match[1]).lstrip("0") or "0"
+        # Compare arbitrary-length decimal lines before converting only the two pinned sites.
+        if (len(start), start) > (len(stop), stop):
             return False
-        covered.update(range(start, stop + 1))
-    return covered == {10, 11} and "audit_fixture" in text
+        if start not in {"10", "11"} or stop not in {"10", "11"}:
+            continue
+        covered.update(range(int(start), int(stop) + 1))
+    return covered == {10, 11} and _has_identifier(text, "audit_fixture")
 
 
 def check_reporting(report: object) -> list[str]:
@@ -90,7 +145,7 @@ def check_reporting(report: object) -> list[str]:
                 errors.append(f"{name} must mark the unavailable source mapping")
             if ANY_LOCATION.search(text.replace("\\", "/")):
                 errors.append(f"{name} must not invent file-and-line locations")
-            if not all(record in text for record in ("standalone-1", "standalone-2")):
+            if not all(_has_identifier(text, record) for record in ("standalone-1", "standalone-2")):
                 errors.append(f"{name} must retain both trace record citations")
     else:
         if len(rows) != 1:
@@ -101,16 +156,18 @@ def check_reporting(report: object) -> list[str]:
             if rows and not _has_both_sites(rows[0][2]):
                 errors.append("Code location must identify audit_fixture and both exact read sites")
         elif rows:
-            location = rows[0][2]
+            location = _visible_markdown(rows[0][2])
             if case == "supplied-locations":
                 if (
                     not SUPPLIED_LOCATION.search(location.replace("\\", "/"))
-                    or "fetch_context" not in location
+                    or not _has_identifier(location, "fetch_context")
                     or "From supplied report; not reverified" not in location
                 ):
                     errors.append("Code location must preserve the supplied location and provenance")
             elif location != "Not provided in supplied report":
                 errors.append("Code location must explicitly state the supplied report has no location")
+        if case == "supplied-missing" and ANY_LOCATION.search(summary.replace("\\", "/")):
+            errors.append("summary must not invent file-and-line locations absent from the supplied report")
     return errors
 
 

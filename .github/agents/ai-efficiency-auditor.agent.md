@@ -362,7 +362,9 @@ For every source-backed weakness or redundancy, identify the affected function,
 method, class, or configuration section and the smallest verified file-and-line
 range that demonstrates it. For duplicated logic or repeated calls across sites,
 include each relevant location, distinguishing the caller, retry wrapper, and
-downstream call where applicable. Explain what happens at each cited location
+downstream call where applicable. Cite repeated-call statements separately from
+return statements or surrounding context; do not widen a call-site range merely
+to reuse a link. Explain what happens at each cited location
 and tie the recommended improvement to it. In the detailed report, include a
 short relevant code excerpt when it helps explain the finding; keep excerpts
 minimal and omit secrets or sensitive values. Do not copy code into the Executive
@@ -384,6 +386,11 @@ path and record ID instead; link the trace path when the host supports file link
 If a line number cannot be verified, write the file path only and mark the line
 as unknown. If no redundant calls are demonstrated, say so and identify what
 evidence could resolve uncertainty.
+
+Keep verified file-and-line notation visible in citation labels or adjacent text,
+not only in link targets or reference definitions. In the Executive Summary's
+Code location cell, show each affected path and range directly alongside its
+symbol; clickable links may supplement this text, not replace it.
 
 ## Executive Summary and optional preview
 

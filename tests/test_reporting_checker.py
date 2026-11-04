@@ -70,6 +70,8 @@ class ReportingCheckerTests(unittest.TestCase):
                 "src/pipeline.py:1-51", "src/pipeline.py:11-10",
                 "src/pipeline.py:10-110", "src/pipeline.py:0-11",
                 "other/src/pipeline.py:10-11", "src/pipeline.py:10-11wrong",
+                "src/pipeline.py:10-11/extra", r"src/pipeline.py:10-11\extra",
+                "src/pipeline.py:10-11.extra", "src/pipeline.py:10-11:12",
             ):
                 with self.subTest(field=field, location=location):
                     report = reference_report("multi-site")
@@ -85,6 +87,121 @@ class ReportingCheckerTests(unittest.TestCase):
             "`src/pipeline.py:10-11`, `audit_fixture`", "Unknown"
         ) + "\nsrc/pipeline.py:10-11 audit_fixture"
         self.assertTrue(check_reporting(report))
+
+    def test_accepts_context_citations_alongside_exact_read_sites(self) -> None:
+        report = reference_report("multi-site")
+        report["detailed_report"] += (
+            " Function context: src/pipeline.py:8-12; contract: src/pipeline.py:9-9."
+        )
+        report["executive_summary"] = report["executive_summary"].replace(
+            "`src/pipeline.py:10-11`, `audit_fixture`",
+            "`audit_fixture`: src/pipeline.py:10-10 and src/pipeline.py:11-11; "
+            "return: src/pipeline.py:12-12",
+        )
+        self.assertEqual(check_reporting(report), [])
+        report["detailed_report"] = report["detailed_report"].replace(
+            "src/pipeline.py:10-11", "src/pipeline.py:8-12"
+        )
+        self.assertTrue(check_reporting(report))
+
+    def test_rejects_substring_symbols(self) -> None:
+        for case, symbol in (
+            ("multi-site", "audit_fixture"), ("supplied-locations", "fetch_context"),
+        ):
+            fields = (
+                ("detailed_report", "executive_summary")
+                if case == "multi-site" else ("executive_summary",)
+            )
+            for field in fields:
+                for replacement in (f"not_{symbol}", f"{symbol}_extra"):
+                    with self.subTest(case=case, field=field, replacement=replacement):
+                        report = reference_report(case)
+                        report[field] = report[field].replace(symbol, replacement)
+                        self.assertTrue(check_reporting(report))
+
+    def test_accepts_markdown_delimited_identifiers_and_citations(self) -> None:
+        for case, tokens in (
+            ("multi-site", ("audit_fixture", "src/pipeline.py:10-11")),
+            ("supplied-locations", ("fetch_context", "src/worker.py:42-44")),
+            ("trace-unmapped", ("standalone-1", "standalone-2")),
+        ):
+            for suffix in (".", ",", ";", ")", "]"):
+                with self.subTest(case=case, suffix=suffix):
+                    report = reference_report(case)
+                    for field in ("detailed_report", "executive_summary"):
+                        for token in tokens:
+                            report[field] = report[field].replace(token, f"[{token}{suffix}]")
+                    self.assertEqual(check_reporting(report), [])
+        report = reference_report("supplied-locations")
+        report["executive_summary"] = report["executive_summary"].replace(
+            "src/worker.py:42-44", r"src\worker.py:42-44"
+        )
+        self.assertEqual(check_reporting(report), [])
+
+    def test_requires_visible_locations_not_link_destinations(self) -> None:
+        for case, location in (
+            ("multi-site", "src/pipeline.py:10-11"),
+            ("supplied-locations", "src/worker.py:42-44"),
+        ):
+            fields = (
+                ("detailed_report", "executive_summary")
+                if case == "multi-site" else ("executive_summary",)
+            )
+            for field in fields:
+                for hidden in (
+                    f'[read sites]({location})',
+                    f'[read sites]({location} "read (context)")',
+                    f'[read sites]({location} "read (nested (context))")',
+                    f'[read sites]({location} "read (context")',
+                    f"[read sites](<{location}> 'read )context')",
+                    f"[read sites][{location}]",
+                    f"<!-- {location} -->",
+                ):
+                    with self.subTest(case=case, field=field, hidden=hidden):
+                        report = reference_report(case)
+                        report[field] = report[field].replace(f"`{location}`", hidden)
+                        if hidden.startswith("[read sites]["):
+                            report[field] += f"\n[{location}]: https://example.test/source"
+                        self.assertTrue(check_reporting(report))
+        report = reference_report("multi-site")
+        report["detailed_report"] = report["detailed_report"].replace(
+            "`src/pipeline.py:10-11`", "[read sites][sites]"
+        ) + "\n[sites]: src/pipeline.py:10-11"
+        self.assertTrue(check_reporting(report))
+
+    def test_accepts_visible_link_labels_adjacent_text_and_literal_code(self) -> None:
+        for case, location in (
+            ("multi-site", "src/pipeline.py:10-11"),
+            ("supplied-locations", "src/worker.py:42-44"),
+        ):
+            for visible in (
+                f"[{location}](https://example.test/source)",
+                f"[read sites](https://example.test/source) `{location}`",
+                f"`[read sites]({location})`",
+            ):
+                with self.subTest(case=case, visible=visible):
+                    report = reference_report(case)
+                    for field in ("detailed_report", "executive_summary"):
+                        report[field] = report[field].replace(f"`{location}`", visible)
+                    self.assertEqual(check_reporting(report), [])
+
+    def test_handles_oversized_line_numbers_without_integer_conversion_errors(self) -> None:
+        huge = "9" * 5000
+        report = reference_report("multi-site")
+        report["detailed_report"] = report["detailed_report"].replace(
+            "src/pipeline.py:10-11", f"src/pipeline.py:{huge}"
+        )
+        self.assertTrue(check_reporting(report))
+        report = reference_report("multi-site")
+        report["detailed_report"] += f"\nContext: src/pipeline.py:12-{huge}."
+        self.assertEqual(check_reporting(report), [])
+        report["detailed_report"] += f"\nReversed: src/pipeline.py:{huge}-12."
+        self.assertTrue(check_reporting(report))
+        report = reference_report("multi-site")
+        report["detailed_report"] = report["detailed_report"].replace(
+            "src/pipeline.py:10-11", f"src/pipeline.py:{'0' * 5000}10-11"
+        )
+        self.assertEqual(check_reporting(report), [])
 
     def test_rejects_unverified_trace_source_and_ranked_findings(self) -> None:
         for addition in (
@@ -103,11 +220,24 @@ class ReportingCheckerTests(unittest.TestCase):
                     report[field] = report[field].replace(text, "")
                     self.assertTrue(check_reporting(report))
 
+    def test_rejects_substring_trace_records(self) -> None:
+        for field in ("detailed_report", "executive_summary"):
+            for record in ("standalone-1", "standalone-2"):
+                for replacement in (f"{record}00", f"other-{record}", f"{record}-extra"):
+                    with self.subTest(field=field, record=record, replacement=replacement):
+                        report = reference_report("trace-unmapped")
+                        report[field] = report[field].replace(record, replacement)
+                        self.assertTrue(check_reporting(report))
+
     def test_rejects_changed_or_unlabeled_supplied_locations(self) -> None:
         for old, new in (
             ("42-44", "42-45"),
             ("42-44", "42-440"),
             ("42-44", "42-44wrong"),
+            ("42-44", "42-44/extra"),
+            ("42-44", r"42-44\extra"),
+            ("42-44", "42-44.extra"),
+            ("42-44", "42-44:45"),
             ("src/worker.py", "other/src/worker.py"),
             ("fetch_context", "fetch"),
             ("From supplied report; not reverified", "Verified"),
@@ -122,6 +252,25 @@ class ReportingCheckerTests(unittest.TestCase):
             "Not provided in supplied report", "src/worker.py:42-44"
         )
         self.assertTrue(check_reporting(report))
+
+    def test_rejects_invented_locations_anywhere_in_missing_location_summary(self) -> None:
+        for addition in (
+            "\nThe duplicate is at src/worker.py:42-44 in fetch_context.",
+            "\nThe duplicate is at src\\worker.py:42-44.",
+            "\n[source](src/worker.py:42-44)",
+            "\n[source]: src/worker.py:42-44",
+        ):
+            with self.subTest(addition=addition):
+                report = reference_report("supplied-missing")
+                report["executive_summary"] += addition
+                self.assertTrue(check_reporting(report))
+        for column in ("Duplicate read", "High confidence; detailed report"):
+            with self.subTest(column=column):
+                report = reference_report("supplied-missing")
+                report["executive_summary"] = report["executive_summary"].replace(
+                    column, column + "; src/worker.py:42-44"
+                )
+                self.assertTrue(check_reporting(report))
 
     def test_enforces_both_summary_limits(self) -> None:
         report = reference_report("multi-site")
@@ -155,6 +304,24 @@ class ReportingCheckerTests(unittest.TestCase):
                 changed = copy.deepcopy(report)
                 changed["executive_summary"] = summary
                 self.assertTrue(check_reporting(changed))
+
+    def test_rejects_empty_edge_columns(self) -> None:
+        for row_type in ("all", "header", "separator", "data"):
+            for prefix, suffix in (("|", ""), ("", "|"), ("|", "|"), ("| ", " |")):
+                with self.subTest(row_type=row_type, prefix=prefix, suffix=suffix):
+                    report = reference_report("multi-site")
+                    lines = report["executive_summary"].splitlines()
+                    for index, line in enumerate(lines):
+                        selected = (
+                            row_type == "all"
+                            or row_type == "header" and line.startswith("| Priority")
+                            or row_type == "separator" and line.startswith("|---")
+                            or row_type == "data" and line.startswith("| P1")
+                        )
+                        if line.startswith("|") and selected:
+                            lines[index] = prefix + line + suffix
+                    report["executive_summary"] = "\n".join(lines)
+                    self.assertTrue(check_reporting(report))
 
     def test_rejects_excess_rows(self) -> None:
         report = reference_report("multi-site")
@@ -193,6 +360,23 @@ class ReportingCheckerTests(unittest.TestCase):
                 capture_output=True, text=True, check=False,
             )
             self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+
+    def test_cli_reports_oversized_line_number_as_contract_mismatch(self) -> None:
+        checker = Path(__file__).resolve().parents[1] / "evaluations" / "check_reporting.py"
+        report = reference_report("multi-site")
+        report["detailed_report"] = report["detailed_report"].replace(
+            "src/pipeline.py:10-11", "src/pipeline.py:" + "9" * 5000
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "report.json"
+            path.write_text(json.dumps(report), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(checker), str(path)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("FAIL: detailed report", result.stdout)
+            self.assertEqual(result.stderr, "")
 
 
 if __name__ == "__main__":

@@ -146,10 +146,10 @@ workspace. No new tools or broader permissions are needed:
 
 | Case ID | Input to the auditor | Automated acceptance |
 |---|---|---|
-| `multi-site` | In a read/search-only host, audit only `src/pipeline.py:audit_fixture` in the fixture workspace, with no traces; return the detailed report and inline Executive Summary because saving is unavailable | One supported priority row; `audit_fixture` and both read sites (`src/pipeline.py:10-11`, or separate `:10` and `:11`) in the detailed report and the summary Code location cell; reject broader or reversed ranges |
+| `multi-site` | In a read/search-only host, audit only `src/pipeline.py:audit_fixture` in the fixture workspace, with no traces; return the detailed report and inline Executive Summary because saving is unavailable | One supported priority row; `audit_fixture` and both read sites (`src/pipeline.py:10-11`, or separate `:10` and `:11`) in the detailed report and the summary Code location cell; broader context ranges cannot substitute for exact read-site evidence; reject reversed ranges |
 | `trace-unmapped` | In a read/search-only host, audit only `traces/standalone.json`, first establishing its payload-free sanitization metadata boundary under the agent's rules; do not read application source; return the detailed report and inline summary | Zero ranked rows, both record IDs and `Code location not verified` in both outputs, no invented file-and-line references |
 | `supplied-locations` | Supply report A below directly in Chat; request only its Executive Summary with no source/trace/tool discovery and no saving or preview | One priority row; retain the supplied symbol/range and `From supplied report; not reverified` in Code location |
-| `supplied-missing` | Supply report B below directly in Chat under the same report-only restrictions | One priority row with exactly `Not provided in supplied report` in Code location |
+| `supplied-missing` | Supply report B below directly in Chat under the same report-only restrictions | One priority row with exactly `Not provided in supplied report` in Code location; no invented file-and-line reference anywhere in the generated summary, including hidden destinations |
 
 Report A (synthetic input; the referenced source is deliberately unavailable):
 
@@ -184,9 +184,25 @@ For this focused scoring contract, request the six-column priority table even
 when it has no rows. Use plain header text and a standard pipe table, no escaped
 pipes inside cells. Source citations may be linked, but must include the visible
 `path:start-end` notation so they can be checked without fetching links. These
-are evaluation serialization conventions, not new product output restrictions.
+table-shape conventions are for evaluation serialization; the agent also requires
+visible file-and-line citations in normal reports.
 The summary must remain at most 60 lines AND 600 whitespace-delimited words and
 must not contain fenced code excerpts.
+The checker matches complete symbols and trace record IDs, rejects path/range
+suffixes on source citations, and preserves empty edge columns when enforcing
+the six-column table shape. Markdown punctuation and Windows path separators
+remain supported.
+Positive source checks ignore inline link destinations, reference identifiers and
+definitions, and HTML comments; visible link labels, adjacent citations and
+literal inline code remain eligible. The extractor covers these focused Markdown
+forms, not a complete renderer. Arbitrarily long decimal line numbers are
+compared without unbounded integer conversion, including reversed-range checks.
+For `supplied-missing`, the entire raw generated summary is checked for invented
+file-and-line references; the supplied detailed input is not rewritten or treated
+as generated output.
+Separate contract, return or function-context citations are allowed alongside
+the exact read-site evidence; wider context ranges do not contribute to site
+coverage. Manually verify that each citation's stated role is accurate.
 
 ```powershell
 python evaluations\check_reporting.py evaluations\results\reporting-multi-site.json

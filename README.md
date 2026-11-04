@@ -79,7 +79,9 @@ You can also ask it to shorten an existing audit without re-auditing the app.
 - Every ranked finding and call-map row requires a source reference.
 Source-backed weaknesses include the affected file, function or section, and
 verified line range, including all relevant sites for duplicated logic or repeated
-calls. Executive Summaries expose these in a **Code location** column. Missing
+calls, without widening call-site ranges to include unrelated return statements.
+Executive Summaries expose paths and ranges directly in a **Code location**
+column, not only behind link labels. Missing
 locations are explicitly marked; locations copied from supplied reports are
 identified as not reverified, without triggering a new code audit.
 
