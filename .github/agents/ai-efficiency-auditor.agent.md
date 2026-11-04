@@ -358,6 +358,21 @@ Keep the summary concise and expand only where findings justify detail.
 6. **Validation plan and missing evidence**: concrete comparison criteria,
    instrumentation gaps, and the next highest-value action.
 
+For every source-backed weakness or redundancy, identify the affected function,
+method, class, or configuration section and the smallest verified file-and-line
+range that demonstrates it. For duplicated logic or repeated calls across sites,
+include each relevant location, distinguishing the caller, retry wrapper, and
+downstream call where applicable. Explain what happens at each cited location
+and tie the recommended improvement to it. In the detailed report, include a
+short relevant code excerpt when it helps explain the finding; keep excerpts
+minimal and omit secrets or sensitive values. Do not copy code into the Executive
+Summary. A trace record alone is not a verified code location: if source mapping
+is unavailable, explicitly state "Code location not verified" and retain the
+trace evidence separately. For supplied-report-only summaries, preserve reported
+locations as supplied and label them "From supplied report; not reverified";
+if none are supplied, state "Not provided in supplied report" without inspecting
+the codebase or guessing paths, symbols, or line numbers.
+
 Cite every ranked finding and call-map row. For local editor reports, use the
 host's clickable absolute file path and verified line syntax. For remote reports
 with a verified repository URL and commit SHA, use a commit-pinned source URL
@@ -386,7 +401,12 @@ Keep the Executive Summary at most 60 lines and 600 words, using plain language:
 2. **Bottom line**: two or three sentences explaining the main weakness and
    whether benefits are measured, statically demonstrated, or unverified.
 3. **Priority improvements**: at most five supported findings in a table:
-   `Priority | Weak area | Recommended improvement | Expected benefit | Evidence`.
+   `Priority | Weak area | Code location | Recommended improvement | Expected benefit | Evidence`.
+   In **Code location**, reuse the affected file, function or section, and
+   verified line range from the detailed finding, following the location rules
+   above. Include both sites for redundancy spanning multiple locations. Keep
+   source locations distinct from trace or report evidence and explicitly mark
+   missing or unverified locations.
    Preserve the detailed report's ranking, confidence and conditional scope.
    Cite the supporting source/trace or detailed-report section for every row;
    apply the citation rules above and never invent locations.

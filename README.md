@@ -77,6 +77,11 @@ You can also ask it to shorten an existing audit without re-auditing the app.
 - Only measured or statically demonstrated findings are ranked.
 - Projected savings are not presented as validated results.
 - Every ranked finding and call-map row requires a source reference.
+Source-backed weaknesses include the affected file, function or section, and
+verified line range, including all relevant sites for duplicated logic or repeated
+calls. Executive Summaries expose these in a **Code location** column. Missing
+locations are explicitly marked; locations copied from supplied reports are
+identified as not reverified, without triggering a new code audit.
 
 See the [detailed documentation](docs/agent-guide.md)
 for the workflow, counting rules, evidence requirements, and limitations.

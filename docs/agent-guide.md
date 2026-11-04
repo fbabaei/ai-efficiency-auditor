@@ -250,6 +250,15 @@ The report contains:
 6. **Validation plan and missing evidence:** comparison criteria,
    instrumentation gaps, and the next highest-value action.
 
+Source-backed weaknesses and redundancy findings identify the affected file,
+function or section, and smallest verified line range. Findings spanning repeated
+or duplicated code identify each relevant site and explain its role. Detailed
+reports may include minimal relevant code excerpts with sensitive values omitted;
+Executive Summaries include locations, not code excerpts. Trace-only findings
+say "Code location not verified" when no source mapping is available. Summaries
+of existing reports label copied locations "From supplied report; not reverified"
+or state "Not provided in supplied report"; they do not inspect code to fill gaps.
+
 Every ranked finding and call-map row requires a citation. Local reports use
 the editor's absolute file-and-line links; remote reports use commit-pinned
 repository links when URL and revision are verified. Otherwise, remote reports
@@ -266,7 +275,7 @@ evidence could resolve uncertainty.
 
 Every audit also creates a plain-language Executive Summary of at most 60 lines and
 600 words. It includes a bottom line, up to five evidence-backed priority rows
-(`Priority | Weak area | Recommended improvement | Expected benefit | Evidence`),
+(`Priority | Weak area | Code location | Recommended improvement | Expected benefit | Evidence`),
 separate evidence gaps, safeguards to retain, and one next action. It preserves
 ranking, confidence, conditional benefits, unknowns, and non-overlapping savings.
 An existing supplied audit can be shortened without new source inspection.

@@ -37,7 +37,7 @@ class PackagingTests(unittest.TestCase):
         agent = " ".join(agent.split())
         for requirement in (
             "at most 60 lines and 600 words",
-            "Priority | Weak area | Recommended improvement | Expected benefit | Evidence",
+            "Priority | Weak area | Code location | Recommended improvement | Expected benefit | Evidence",
             "do not replace the detailed six-section report",
             "without conducting a new audit",
             "do not add overlapping savings",
@@ -56,6 +56,27 @@ class PackagingTests(unittest.TestCase):
             "preview consent was not obtained",
             "Markdown: Open Preview",
             "Report permission, save, read-back, and preview errors explicitly",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, agent)
+
+    def test_code_location_contract_is_declared(self) -> None:
+        agent = (ROOT / ".github" / "agents" / "ai-efficiency-auditor.agent.md").read_text(
+            encoding="utf-8"
+        )
+        agent = " ".join(agent.split())
+        for requirement in (
+            "smallest verified file-and-line range",
+            "include each relevant location",
+            "tie the recommended improvement to it",
+            "omit secrets or sensitive values",
+            "Do not copy code into the Executive Summary",
+            "A trace record alone is not a verified code location",
+            "Code location not verified",
+            "From supplied report; not reverified",
+            "Not provided in supplied report",
+            "without inspecting the codebase or guessing paths, symbols, or line numbers",
+            "Include both sites for redundancy spanning multiple locations",
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, agent)
