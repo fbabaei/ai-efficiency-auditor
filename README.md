@@ -10,6 +10,19 @@ The agent recommends changes and validation experiments, creates a Markdown
 Executive Summary, and asks before opening its preview. It does not edit application code,
 run commands, call external services, or replay workloads.
 
+## When it is useful
+
+Use the auditor for **review and prioritization**: finding avoidable AI calls
+and turning evidence-backed weaknesses into actionable recommendations. Visible
+code locations help developers investigate, while the short Executive Summary
+helps readers understand the priorities without working through the full audit.
+
+An audit is not proof of savings. Static analysis can identify opportunities,
+but actual cost, latency, and quality improvements require representative
+runtime measurements. Validate proposed changes on a real application and
+confirm measurable savings without changing intended behavior or weakening
+correctness or security.
+
 ## Files
 
 - [Agent definition](.github/agents/ai-efficiency-auditor.agent.md)
