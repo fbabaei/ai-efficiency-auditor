@@ -33,6 +33,9 @@ Tests check packaging and documentation links, independently recompute complete
 fixture counts, and exercise the report checker with valid and deliberately
 incorrect reports. The generated reference report used in unit tests is a
 checker test oracle, not a model result.
+The separate reporting checker also exercises actual Markdown table, citation,
+provenance-label, and length constraints using synthetic outputs and mutations.
+Its unit-test outputs are likewise not model captures.
 
 ## Behavioral cases
 
@@ -113,6 +116,12 @@ prove any of these model behaviors.
 |---|---|
 | Completed audit | Detailed six-section report plus a new Markdown Executive Summary, at most 60 lines and 600 words; bottom line, at most five priority rows with evidence, gaps, safeguards and one next action |
 | Supplied report | Summarize that report without new audit discovery or claims of new measurements |
+| Verified source locations | Identify the affected function and smallest verified file-and-line range in each finding and the summary's Code location column |
+| Multi-site redundancy | Preserve both sites, explain their roles (first lookup versus repeated lookup), and link the improvement to the same detailed finding |
+| Trace without source mapping | Use `Code location not verified`; record IDs are trace evidence, not source locations; unproven avoidability stays unranked |
+| Supplied locations | Retain the supplied function/range with `From supplied report; not reverified`; do not inspect source to fill or verify it |
+| Missing supplied locations | Use `Not provided in supplied report`; no guessed function/path/line or discovery calls |
+| Summary fidelity | Preserve detailed priority, confidence, conditions and non-overlapping benefits; keep code excerpts out of the summary |
 | Uncertain or overlapping benefits | Preserve confidence/conditions; separate hypotheses, no invented or double-counted savings |
 | No demonstrated improvement | State that clearly; no fabricated priority findings |
 | Existing destination | Preserve its exact contents and choose the first unused numeric suffix; no directory enumeration |
@@ -125,6 +134,79 @@ prove any of these model behaviors.
 | Preview failure | Explain the error; never claim preview opened |
 | Non-interactive run | Leave preview closed and state consent was not obtained |
 | Mutation boundary | Only new Executive Summary Markdown files; no modified/deleted files or application/evidence/configuration changes, command execution, delegation, or external-service calls |
+
+### Focused reporting behavior evaluation
+
+These four additional cases test rendered reporting behavior, not the metrics
+companion schema. They do not change the 20-scenario application contract or the
+restricted session checker. Run each in a fresh conversation with the installed
+candidate; never let the auditor read this guide, checkers, tests or expected
+answers as evidence. Use the runner to capture outputs outside the fixture
+workspace. No new tools or broader permissions are needed:
+
+| Case ID | Input to the auditor | Automated acceptance |
+|---|---|---|
+| `multi-site` | In a read/search-only host, audit only `src/pipeline.py:audit_fixture` in the fixture workspace, with no traces; return the detailed report and inline Executive Summary because saving is unavailable | One supported priority row; `audit_fixture` and both read sites (`src/pipeline.py:10-11`, or separate `:10` and `:11`) in the detailed report and the summary Code location cell; reject broader or reversed ranges |
+| `trace-unmapped` | In a read/search-only host, audit only `traces/standalone.json`, first establishing its payload-free sanitization metadata boundary under the agent's rules; do not read application source; return the detailed report and inline summary | Zero ranked rows, both record IDs and `Code location not verified` in both outputs, no invented file-and-line references |
+| `supplied-locations` | Supply report A below directly in Chat; request only its Executive Summary with no source/trace/tool discovery and no saving or preview | One priority row; retain the supplied symbol/range and `From supplied report; not reverified` in Code location |
+| `supplied-missing` | Supply report B below directly in Chat under the same report-only restrictions | One priority row with exactly `Not provided in supplied report` in Code location |
+
+Report A (synthetic input; the referenced source is deliberately unavailable):
+
+> P1 - Duplicate context lookup. Static evidence, high confidence:
+> `src/worker.py:42-44`, function `fetch_context`, contains the first lookup and
+> a repeated lookup. The contract guarantees unchanged state and identity and
+> permits reuse. Reuse the first result to avoid one logical tool call per
+> invocation under that contract. This is not a measured runtime saving.
+> No runtime trace or audited revision was supplied.
+
+Report B (synthetic input):
+
+> P1 - Duplicate context lookup. Static evidence, high confidence: the supplied
+> audit established a repeated lookup under an unchanged-state/identity contract
+> permitting reuse. Reuse the first result to avoid one logical tool call per
+> invocation under that contract. This is not a measured runtime saving.
+> No source location, runtime trace or audited revision was supplied.
+
+For each run, ask the **runner**, not the auditor, to serialize this JSON envelope
+without changing the original Markdown. For supplied-report cases,
+`detailed_report` is the input report, not a newly generated audit:
+
+```json
+{
+  "case": "multi-site",
+  "detailed_report": "<exact captured detailed Markdown or supplied input>",
+  "executive_summary": "<exact captured summary Markdown>"
+}
+```
+
+For this focused scoring contract, request the six-column priority table even
+when it has no rows. Use plain header text and a standard pipe table, no escaped
+pipes inside cells. Source citations may be linked, but must include the visible
+`path:start-end` notation so they can be checked without fetching links. These
+are evaluation serialization conventions, not new product output restrictions.
+The summary must remain at most 60 lines AND 600 whitespace-delimited words and
+must not contain fenced code excerpts.
+
+```powershell
+python evaluations\check_reporting.py evaluations\results\reporting-multi-site.json
+```
+
+Score all four captures separately. Exit codes are 0 (checks pass), 1 (contract
+mismatch), and 2 (unreadable input). Passing checks is not proof of semantic
+correctness: manually review site roles, recommendation linkage, confidence,
+priority, conditional/non-overlapping benefits, inline code excerpts, and the
+six-section detailed report where applicable. Inspect the complete tool capture
+to prove no source discovery occurred in supplied-report-only mode. The Markdown
+checker cannot establish tool behavior, verify that a runner copied output
+faithfully, or validate save/preview interactions.
+
+Pin the candidate agent hash, fixture commit, client/model and effective tools
+alongside the raw outputs and tool capture. Rerun after changing fixture line
+positions; the checker intentionally pins the two source sites. Do not count
+test oracles as live model results or rescore historical captures as evidence
+that these newly added cases ran. Interactive persistence and preview still
+require the separate host matrix above.
 
 ### Evaluation prompt
 

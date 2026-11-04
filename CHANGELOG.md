@@ -2,6 +2,13 @@
 
 ## 0.4.0 - Unreleased
 
+- Add four focused reporting evaluation cases and a captured-Markdown checker for
+  multi-site source ranges, trace-only unknown locations, supplied-report
+  provenance, priority tables and both summary length limits. Add negative
+  checker tests and manual host checks without expanding restricted audit tools
+  or claiming new live model evidence.
+- Require actionable symbols/ranges, all relevant redundancy sites and explicit
+  unknown/supplied provenance in detailed findings and Executive Summaries.
 - Add an evidence-backed Markdown Executive Summary of weak areas and recommended
   improvements alongside detailed audits, with report-only creation, no
   overwrites, and explicit consent before optional local preview. Document

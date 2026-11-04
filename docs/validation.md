@@ -12,6 +12,14 @@ not model compliance. The interactive host acceptance checks in the
 [evaluation guide](../evaluations/README.md#executive-summary-host-acceptance) remain
 required before claiming the new workflow works in a specific client.
 
+The [focused reporting evaluation](../evaluations/README.md#focused-reporting-behavior-evaluation)
+adds four separately scored cases for multi-site source ranges, unmapped traces,
+and supplied-report location provenance. Offline mutation tests exercise its
+Markdown checker, including both summary length limits; they are not generated
+agent outputs. No live captures of these four cases are recorded here. Site
+roles, summary fidelity and supplied-report tool scope still need manual review,
+and saving/preview still need the host matrix.
+
 ### Latest discovery-scope fix and live evaluation
 
 On 2026-11-03, the updated agent was run once in application mode and once in
