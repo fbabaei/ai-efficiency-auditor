@@ -8,8 +8,8 @@ sanitized traces to identify avoidable tool and model
 calls, retry amplification, loops, and potential token or model-capacity waste
 without weakening correctness or security.
 
-The agent recommends changes and validation experiments, creates a Markdown
-Executive Summary, and asks before opening its preview. It does not edit application code,
+The agent recommends changes and validation experiments, saves a detailed Markdown
+audit and Executive Summary, and asks before opening the summary preview. It does not edit application code,
 run commands, call external services, or replay workloads.
 
 ## When it is useful
@@ -73,12 +73,16 @@ source-level causes and safe changes remain unknown unless evidence establishes 
 
 The report includes evidence coverage, a call map, supported runtime metrics,
 ranked findings, a proposed design, and a validation plan.
+The complete six-section report is saved as
+`reports/<application>-audit-detailed-report.md` in the audited workspace.
 
 Each audit also produces a plain-language **Executive Summary** (at most 60 lines and
 600 words) with prioritized weak areas, recommended improvements, expected
 benefits, evidence gaps, safeguards, and one next step. By default it is saved
 as `reports/<application>-audit-executive-summary.md` in the audited workspace;
-existing files are preserved by choosing a numeric suffix. After saving, the
+existing files for either report are preserved by choosing a numeric suffix.
+Both saved reports are read back and linked, and the summary links to the detailed
+report. The summary length limits do not apply to the detailed report. After saving, the
 agent asks whether to open Markdown preview and waits for an explicit Yes.
 You can also ask it to shorten an existing audit without re-auditing the app.
 
@@ -107,7 +111,7 @@ for the workflow, counting rules, evidence requirements, and limitations.
 
 The definition requests `read`, `search`, `edit`, `ask_user`, and
 `appmod-preview-markdown`, with no subagents. Editing is instructed to create
-new Executive Summary files only; existing files and application code remain read-only.
+new detailed audit and Executive Summary files only; existing files and application code remain read-only.
 This is an instruction boundary, not a filesystem sandbox: the `edit` tool group
 itself is broader. Review tool approvals and verify the host's effective tools.
 `ask_user` and `appmod-preview-markdown` are host-specific tool names; verify

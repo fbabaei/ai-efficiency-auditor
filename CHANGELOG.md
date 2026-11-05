@@ -2,6 +2,9 @@
 
 ## 0.4.0 - Unreleased
 
+- Save the complete six-section audit under `reports/` alongside the Executive
+  Summary, with independent no-overwrite paths, read-back verification, and
+  cross-links. Update both reusable prompts and retain summary-only preview consent.
 - Reject hidden-only Markdown source citations and invented locations anywhere
   in missing-source summaries; safely compare oversized line numbers. Verify
   91 offline tests and rescore unchanged captures without replacing prior scores.

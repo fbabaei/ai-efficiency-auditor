@@ -236,7 +236,7 @@ summed when removing one model step also removes its tool work.
 
 The agent exposes `read`, `search`, `edit`, `ask_user`, and
 `appmod-preview-markdown`, with no subagents. Its sole write exception is creating
-a new Markdown Executive Summary; preview requires explicit user consent. These
+new Markdown detailed audit and Executive Summary files; summary preview requires explicit user consent. These
 host-specific interaction/preview names must resolve to compatible local tools.
 If unavailable, it uses Chat and manual save/preview instructions. The `edit`
 group is not path-restricted by the host; report-only writes are an instruction
@@ -311,18 +311,26 @@ Every audit also creates a plain-language Executive Summary of at most 60 lines 
 separate evidence gaps, safeguards to retain, and one next action. It preserves
 ranking, confidence, conditional benefits, unknowns, and non-overlapping savings.
 An existing supplied audit can be shortened without new source inspection.
-The detailed six-section report is still required for new audits.
+The detailed six-section report is still required for new audits and is saved as
+`reports/<application>-audit-detailed-report.md`. It is not subject to the summary's
+length limits. A supplied-report-only summary does not create a new detailed audit.
 
-The default output is `reports/<application>-audit-executive-summary.md` in the audited
+The default summary output is `reports/<application>-audit-executive-summary.md` in the audited
 workspace (`trace` for trace-only audits). Existing files are never overwritten;
 the agent checks exact paths and uses the first available numeric suffix.
 An explicitly requested outside-workspace destination requires confirmation.
-After reading back the saved report, the agent links it and asks whether to open
-Markdown preview. Only an explicit Yes opens that file; declining, dismissing,
+The agent saves and reads back the detailed report first, verifying all six sections
+and their evidence citations, then links its verified path from the summary. It
+reads back the summary and checks both summary length limits. It links both verified
+files and asks whether to open the Executive Summary in Markdown preview.
+Only an explicit Yes opens that summary; declining, dismissing,
 or not answering leaves it closed. Each new report requires fresh consent.
 
 Without a save tool or after a save failure, the agent explains that the report
-was not saved and returns Markdown in Chat. Without interaction tools it asks
+was not saved, identifies which report failed, and returns that report's Markdown
+in Chat. An unverified detailed file is not linked as verified; the summary
+identifies Chat as its location when saving or verification fails.
+Without interaction tools it asks
 in Chat; without preview tools it explains how to use **Markdown: Open Preview**
 manually. Non-interactive runs never open preview. Save, verification, and
 preview errors must be reported rather than presented as success.

@@ -114,7 +114,7 @@ prove any of these model behaviors.
 
 | Case | Required behavior |
 |---|---|
-| Completed audit | Detailed six-section report plus a new Markdown Executive Summary, at most 60 lines and 600 words; bottom line, at most five priority rows with evidence, gaps, safeguards and one next action |
+| Completed audit | Save and read back the complete six-section report at `reports/<application>-audit-detailed-report.md` and a new Markdown Executive Summary at `reports/<application>-audit-executive-summary.md`; link both files and link the detail from the summary. Only the summary is limited to 60 lines and 600 words; bottom line, at most five priority rows with evidence, gaps, safeguards and one next action |
 | Supplied report | Summarize that report without new audit discovery or claims of new measurements |
 | Verified source locations | Identify the affected function and smallest verified file-and-line range in each finding and the summary's Code location column |
 | Multi-site redundancy | Preserve both sites, explain their roles (first lookup versus repeated lookup), and link the improvement to the same detailed finding |

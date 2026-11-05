@@ -85,6 +85,40 @@ class PackagingTests(unittest.TestCase):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, agent)
 
+    def test_detailed_report_persistence_contract_is_declared(self) -> None:
+        agent = (ROOT / ".github" / "agents" / "ai-efficiency-auditor.agent.md").read_text(
+            encoding="utf-8"
+        )
+        agent = " ".join(agent.split())
+        for requirement in (
+            "reports/<application>-audit-detailed-report.md",
+            "Save the detailed report first",
+            "all six required sections and their evidence citations",
+            "limits apply only to the Executive Summary, not the detailed report",
+            "Provide clickable links to both verified saved reports",
+            "do not generate or copy a new detailed audit",
+            "identifying which report failed",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, agent)
+
+    def test_reusable_prompts_save_both_reports(self) -> None:
+        for name in ("audit-knowledge-search", "audit-agent-retries"):
+            prompt = (ROOT / ".github" / "prompts" / f"{name}.prompt.md").read_text(
+                encoding="utf-8"
+            )
+            for requirement in (
+                'agent: "AI Efficiency Auditor"',
+                "reports/<application>-audit-detailed-report.md",
+                "reports/<application>-audit-executive-summary.md",
+                "Never overwrite existing files",
+                "Read both saved files back",
+                "these limits do not apply to the detailed report",
+                "Open the Executive Summary in Markdown preview?",
+            ):
+                with self.subTest(prompt=name, requirement=requirement):
+                    self.assertIn(requirement, prompt)
+
     def test_documentation_links_resolve(self) -> None:
         paths = [ROOT / "README.md", ROOT / "CHANGELOG.md"]
         paths.extend((ROOT / "docs").glob("*.md"))

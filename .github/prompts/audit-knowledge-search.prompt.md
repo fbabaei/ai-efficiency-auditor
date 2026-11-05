@@ -5,7 +5,7 @@ agent: "AI Efficiency Auditor"
 
 Audit this workspace’s knowledge-search request flow using AI Efficiency Auditor methodology 0.4.0.
 
-Keep application code, configuration, and existing evidence read-only. Do not execute workloads, call external services, or modify the application.
+Keep application code, configuration, and existing evidence read-only. Do not execute workloads, call external services, or modify the application. The only write exception is creating new Markdown detailed audit and Executive Summary files under reports/.
 
 Trace the current flow from incoming request through routing, skill/reference loading, context reads, RAG retrieval, validation, answer synthesis, and reporting-related inference. Verify the relevant entry points instead of assuming every search uses Q&A.
 
@@ -32,4 +32,6 @@ Keep logical tool calls, execution attempts, downstream requests, model calls, a
 
 Keep smaller-model substitutions, lower reasoning effort, and quality-dependent context reductions in the validation plan unless comparative evidence supports them.
 
-Deliver the detailed six-section audit and save a new Executive Summary under reports/. Include scenario-specific baseline/candidate call budgets, safeguards, and a matched validation plan. If evidence is insufficient, identify the smallest sanitized export needed to resolve the highest-value uncertainty.
+Save the complete detailed six-section audit as reports/<application>-audit-detailed-report.md and a new Executive Summary as reports/<application>-audit-executive-summary.md. Never overwrite existing files; use the first unused numeric suffix for each occupied path. Include scenario-specific baseline/candidate call budgets, safeguards, and a matched validation plan. If evidence is insufficient, identify the smallest sanitized export needed to resolve the highest-value uncertainty.
+
+Read both saved files back, verify all six sections and evidence citations in the detailed report, and check the Executive Summary's 60-line and 600-word limits (these limits do not apply to the detailed report). Link the verified detailed report from the summary and provide links to both files. Disclose save or verification failures and return any unsaved report in Chat. After successful summary verification, ask: "Open the Executive Summary in Markdown preview?" Open only that new summary after an explicit Yes; otherwise do not open preview.
