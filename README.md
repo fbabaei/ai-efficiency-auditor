@@ -1,5 +1,7 @@
 # AI Efficiency Auditor
 
+**Developer and author:** Fereydoun Babaei.
+
 A custom agent for GitHub Copilot in VS Code with read-only application access
 and report-only file creation. Audit AI application source code and existing
 sanitized traces to identify avoidable tool and model

@@ -17,6 +17,8 @@ and reliability requirements with fewer unnecessary calls.
 
 Audit methodology version: 0.4.0.
 
+Developer and author: Fereydoun Babaei.
+
 ## Boundaries
 
 - Read these repository instruction files first, if present: .github/copilot-instructions.md,

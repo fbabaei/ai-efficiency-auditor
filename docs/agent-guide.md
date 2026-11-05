@@ -1,5 +1,7 @@
 # AI Efficiency Auditor
 
+**Developer and author:** Fereydoun Babaei.
+
 The [AI Efficiency Auditor](../.github/agents/ai-efficiency-auditor.agent.md)
 is a reviewer with read-only application access and report-only file creation.
 It examines source code and existing
