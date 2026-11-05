@@ -14,6 +14,32 @@ sanitized traces to answer:
 The agent definition is an instruction file, not a monitoring service. Analysis
 happens when you invoke the agent.
 
+## Why use it instead of the same prompt in Copilot?
+
+The advantage is a repeatable audit method, not a smarter AI model. The auditor
+runs through Copilot, adding detailed instructions and a focused tool configuration
+behind a short audit request.
+
+| Area | What the auditor adds |
+|---|---|
+| Coverage | A defined workflow for retrieval, inference, retries, tokens, caching, and model selection. |
+| Evidence | Observed runtime counts are separated from static bounds and unknowns, with source citations. |
+| Recommendations | Demonstrated waste is distinguished from hypotheses; unverified model substitutions stay in the validation plan. |
+| Boundaries | Restricted tools and instructions against changing application code, replaying workloads, or exposing sensitive evidence. |
+| Reporting | Standardized findings and a short Executive Summary, with save verification and preview consent. |
+
+Ordinary Copilot could produce comparable results if given the entire agent
+definition, equivalent tools, the same model, and the same evidence. The benefit
+is packaging and versioning the methodology once, with regression evaluations,
+rather than reconstructing it for every audit.
+
+The auditor is not guaranteed to be more accurate, faster, or cheaper. Its longer
+instructions add context overhead, and instruction-following can still fail,
+including missed report or preview steps. Tool restrictions and instructions are
+not a report-only filesystem sandbox. Its strongest benefit is consistency and
+reviewability for repeated audits, not proven superiority over a carefully
+configured Copilot session.
+
 ## How it works
 
 ### 1. Establish scope
